@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Anonymous Message Inbox</title>
+    <!-- Configure Tailwind for Dark Mode (class strategy) -->
+    <script>tailwind.config = { darkMode: 'class', }</script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* --- Dark Mode Styles (Always Active) --- */
+        body.dark {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark BG */
+            color: #e5e7eb; /* Light Text */
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container-card {
+            background-color: #1f2937; /* Dark Card BG */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        /* General dark mode text overrides */
+        .text-gray-800 { color: #f9fafb; }
+        .text-gray-500 { color: #9ca3af; }
+        
+        /* Input/Textarea styling for dark theme */
+        input, textarea { 
+            background-color: #374151; 
+            border-color: #4b5563;
+            color: #e5e7eb;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4f46e5; /* Indigo-600 */
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.5);
+        }
+
+        /* Modal styling for dark theme */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* --- Custom Gemini-Style Heading --- */
+        .gemini-heading {
+            /* Full spectrum colors for the gradient */
+            background: linear-gradient(90deg, 
+                #ef4444, /* Red */
+                #f97316, /* Orange */
+                #fbbf24, /* Yellow */
+                #22c55e, /* Green */
+                #3b82f6, /* Blue */
+                #8b5cf6, /* Indigo */
+                #ec4899  /* Pink */
+            );
+            /* Clip the gradient to the text shape */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            display: inline-block; /* Ensures clipping works correctly */
+        }
+    </style>
+</head>
+<body class="dark">
+
+<div id="app" class="min-h-screen flex justify-center items-center p-4">
+    <div class="container-card w-full max-w-lg shadow-xl rounded-2xl p-6 md:p-8">
+        
+        <!-- MOBILE FRIENDLY HEADING ADJUSTMENT: text-3xl on small screens, scaling to 4xl -->
+        <h1 class="text-3xl sm:text-4xl font-extrabold mb-4" id="main-title">
+            <span class="gemini-heading">Vicade's anonymous messages</span>
+        </h1>
+        <p class="text-gray-500 mb-6" id="main-subtitle">Send a private message to Vicade below.</p>
+
+        <!-- Main Content Area - Submission View -->
+        <div id="content-area">
+            <div id="submit-view">
+                <div class="mb-8 p-6 bg-gray-700 rounded-xl border border-gray-600">
+                    <h2 class="text-xl font-semibold mb-3 text-white">Write Your Anonymous Note</h2>
+                    
+                    <!-- Phone Number Input (Optional) -->
+                    <input type="tel" id="phone-number-input"
+                           class="w-full p-3 mb-4 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="WhatsApp Number (Optional, for privacy/security)" />
+
+                    <!-- Message Textarea (MANDATORY) -->
+                    <textarea id="message-input"
+                              rows="6"
+                              class="w-full p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="Type your message here. It's completely anonymous and private."></textarea>
+
+                    <!-- Submission Button -->
+                    <button id="submit-button"
+                            class="mt-4 w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition duration-150 transform hover:scale-[1.01]"
+                            onclick="submitMessage()">
+                        Send Anonymously
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Custom Message Modal (for success/error) -->
+<div id="message-modal" class="modal-overlay">
+    <div id="modal-content" class="modal-content">
+        <h3 id="modal-title" class="text-xl font-bold mb-4 text-gray-800"></h3>
+        <p id="modal-message" class="text-gray-500 mb-4"></p>
+        <button onclick="closeMessageBox()"
+                class="w-full mt-4 px-4 py-2 bg-gray-600 text-white font-semibold rounded-full hover:bg-gray-500 transition duration-150">
+            Close
+        </button>
+    </div>
+</div>
+
+
+<script>
+    // Note: All Firebase/Firestore dependencies have been removed to use a Flask backend API endpoint.
+
+    // UI elements
+    const phoneNumberInput = document.getElementById('phone-number-input');
+    const messageInput = document.getElementById('message-input');
+    const submitButton = document.getElementById('submit-button');
+
+    // --- Utility Functions (Message Box) ---
+    const modal = document.getElementById('message-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalMessage = document.getElementById('modal-message');
+
+    function showMessageBox(title, message) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modal.style.display = 'flex';
+    }
+
+    window.closeMessageBox = () => {
+        modal.style.display = 'none';
+    };
+
+    /**
+     * Simulates sending a message to a Flask backend API endpoint.
+     * Your Flask route should handle a POST request at /api/submit-message.
+     */
+    window.submitMessage = async () => {
+        const messageText = messageInput.value.trim();
+        const phoneNumber = phoneNumberInput.value.trim();
+        
+        if (!messageText) {
+            showMessageBox('Input Required', 'Please type a message before sending.');
+            return;
+        }
+        
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending...';
+
+        // Data structure expected by your Flask server
+        const payload = {
+            content: messageText,
+            phoneNumber: phoneNumber || null,
+            // ID and Timestamp should be generated on the server side (Flask)
+        };
+        
+        // Placeholder URL for your Flask endpoint
+        const apiEndpoint = '/api/submit-message'; 
+
+        try {
+            // Simulate API call to your Flask server
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            // Simulate a delay (optional, but good for testing loading state)
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            if (response.ok) {
+                // Assuming your Flask server returns a 200/201 on success
+                // const result = await response.json(); // Uncomment to read server response
+                
+                // Clear inputs and show success
+                messageInput.value = '';
+                phoneNumberInput.value = '';
+                showMessageBox('Success!', 'Your anonymous message has been sent!');
+            } else {
+                // Handle non-200 responses (e.g., 400 validation error)
+                // const errorData = await response.json();
+                showMessageBox('Send Error', `Failed to send message. Server responded with status ${response.status}.`);
+            }
+        } catch (e) {
+            console.error("Network or server connection error: ", e);
+            showMessageBox('Connection Error', 'Could not reach the server. Check your connection or Flask setup.');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Send Anonymously';
+        }
+    };
+
+    // --- Application Bootstrapping ---
+    function bootstrapApp() {
+        // Since no external resources need initialization (like Firebase), 
+        // the app is ready immediately.
+        console.log("Frontend application ready. Waiting for Flask server connection at /api/submit-message.");
+    }
+
+    bootstrapApp();
+
+</script>
+
+</body>
+</html>

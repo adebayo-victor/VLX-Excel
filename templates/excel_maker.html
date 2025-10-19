@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLX Data Export Tool</title>
+    <style>
+        /* Define the Custom Colors for the Theme */
+        :root {
+            --color-blue: #007bff;   /* Blue */
+            --color-red: #dc3545;    /* Red for Warnings */
+            --color-green: #28a745;  /* Green for Success */
+            --color-black: #000000;
+            --color-light-gray: #f8f9fa;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: var(--color-light-gray);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+        }
+
+        /* Custom Logo/Catching Part (VLX) - Corrected colors */
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* V is Red, L is Blue, X remains Red as it was the original 'B' (Blue) */
+        .logo .V { color: var(--color-red); } /* New V is Red */
+        .logo .L { color: var(--color-blue); } /* New L is Blue */
+        .logo .X { color: var(--color-green); } /* X is Green (Success) */
+
+        /* Input and Button Styling */
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--color-blue); /* Blue border for data input */
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        input[type="text"] { /* Target the prompt input specifically */
+            width: 100%;
+            height: 50px; /* Use height for single line input for consistency */
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--color-blue); /* Blue border for data input */
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+        }
+
+        /* Initial Submit Button (Blue) */
+        #submitButton {
+            background-color: var(--color-blue);
+            color: white;
+        }
+
+        #submitButton:hover {
+            background-color: #0056b3;
+        }
+
+        /* Dynamic Download Button (Green for Success) */
+        #downloadButton {
+            background-color: var(--color-green);
+            color: white;
+            display: none; /* Hidden until success */
+            margin-top: 15px; /* Add margin to separate from submit or notification */
+        }
+
+        #downloadButton:hover {
+            background-color: #1e7e34;
+        }
+
+        /* Notification Area Styling */
+        .notification {
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+        }
+
+        .notification.success {
+            background-color: rgba(40, 167, 69, 0.2); /* Light Green background */
+            color: var(--color-green);
+        }
+
+        .notification.warning {
+            background-color: rgba(220, 53, 69, 0.2); /* Light Red background */
+            color: var(--color-red);
+        }
+
+        /* Checkbox Border Lines (Black) */
+        .checkbox-group {
+            border: 1px solid var(--color-black); 
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .checkbox-group label {
+            color: var(--color-black); /* Black text for checkbox labels */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span class="V">V</span><span class="L">L</span><span class="X">X</span> Data Parser
+        </div>
+        
+        <h2>Enter Raw Data for Excel Generation</h2>
+        
+        <input placeholder="Prompt (e.g., 'Product Name, SKU, Price')" id="prompt" type="text">
+        <textarea id="rawData" placeholder="Paste your unstructured data here..."></textarea>
+
+        <div class="checkbox-group">
+            <label><input type="checkbox" id="includeHeaders" checked> Include Defined Headers</label>
+        </div>
+        
+        <button id="submitButton">Process Data</button>
+        
+        <a id="downloadButtonLink" style="text-decoration: none;">
+            <button id="downloadButton">Download Excel File</button>
+        </a>
+
+        <div id="notificationArea" class="notification"></div>
+    </div>
+
+    <script>
+        document.getElementById('submitButton').addEventListener('click', async () => {
+    
+            const rawData = document.getElementById('rawData').value;
+            const prompt = document.getElementById('prompt').value;
+            const notificationArea = document.getElementById('notificationArea');
+            const submitButton = document.getElementById('submitButton');
+            
+            const downloadButton = document.getElementById('downloadButton');
+            if (downloadButton) downloadButton.style.display = 'none'; 
+    
+            // 1. Basic Validation 
+            if (!rawData.trim() || !prompt.trim()) {
+                notificationArea.textContent = 'Warning: Please fill in both the Prompt and Raw Data fields.';
+                notificationArea.className = 'notification warning';
+                notificationArea.style.display = 'block';
+                return; 
+            }
+    
+            // Reset UI and prepare for processing
+            notificationArea.style.display = 'none';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+    
+            // Show "Processing" message
+            notificationArea.textContent = 'Processing... Please wait.';
+            notificationArea.className = 'notification'; 
+            notificationArea.style.display = 'block';
+    
+            const payload = {
+                data: rawData,
+                prompt: prompt
+            };
+            
+            try {
+                const response = await fetch('/get_excel_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(payload)
+                });
+    
+                // 2. Handle non-200 responses (Server/AI failure)
+                if (!response.ok) {
+                    // If this is still failing, the server/middleware is sending bad data
+                    // We rely ONLY on the status code and status text provided by the browser.
+                    const errorMessage = `Server Error: ${response.statusText || response.status}. The file could not be generated.`;
+                    throw new Error(errorMessage);
+                }
+                
+                // --- Direct File Download Logic (Success Path) ---
+                
+                // OPTIONAL BUT RECOMMENDED: Validate Content-Type for a successful response
+                const contentType = response.headers.get('Content-Type');
+                if (contentType && !contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') && !contentType.includes('application/octet-stream')) {
+                    // If it's a 200 OK, but the content type isn't a file, try reading it as text for a hidden error message.
+                    // We clone the response to read it as text without affecting the original blob reading path.
+                    const textResponse = await response.clone().text();
+                    throw new Error(`Server returned unexpected data type: ${contentType}. Content: ${textResponse.substring(0, 50)}...`);
+                }
+                
+    
+                // 3. Extract the file name from the Content-Disposition header
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'data_export.xlsx'; 
+                if (contentDisposition) {
+                    const matches = contentDisposition.match(/filename="?(.+)"?$/i);
+                    if (matches && matches[1]) {
+                        filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                    }
+                }
+    
+                // 4. Get the file contents as a Blob (binary data stream)
+                const blob = await response.blob(); 
+                
+                // 5. Create a temporary URL and trigger the download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename; 
+                document.body.appendChild(a);
+                a.click(); 
+    
+                // 6. Clean up and provide success feedback
+                window.URL.revokeObjectURL(url); 
+                
+                notificationArea.textContent = `Success! File "${filename}" is downloading now. 🎉`;
+                notificationArea.className = 'notification success';
+    
+            } catch (error) {
+                // CATCH BLOCK REVISION: Check if the error is the exact "PK" binary/JSON conflict
+                let displayMessage = error.message;
+    
+                // This is the failsafe to catch the specific binary/JSON conflict that might happen during stream reading
+                if (displayMessage.includes("Unexpected token 'P'") && displayMessage.includes('is not valid JSON')) {
+                    displayMessage = 'File download failed due to a server response format error. The server may have sent file data when an error was expected. Check server logs.';
+                }
+    
+                notificationArea.textContent = 'Error: ' + displayMessage;
+                notificationArea.className = 'notification warning';
+            } finally {
+                // 7. Restore submit button state
+                notificationArea.style.display = 'block';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Process Data';
+            }
+        });
+    </script>
+</html>
