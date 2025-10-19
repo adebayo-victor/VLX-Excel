@@ -17,16 +17,23 @@ import pandas as pd
 from cs50 import SQL
 import requests
 import io
+from dotenv import load_dotenv
+from flask_cors import CORS
+#load virtual environment
+load_dotenv()
+
 
 #excel creating function
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent"
-def generate_csv(prompt):
-    meta_prompt = '''Act as a professional data parser. The accompanying raw data includes the final desired CSV header row on the very first line. Parse the rest of the unstructured text line-by-line, structuring it to fit the specified columns.
-        Your entire response MUST be ONLY the raw CSV text. Start directly with the header row provided in the input. Do not add any extra text or formatting.
+GEMINI_URL = os.environ.get("GEMINI_URL")
+def generate_csv(prompt, data):
+    meta_prompt = f'''Act as a professional data parser. The accompanying raw data includes the final desired CSV header row on the very first line. Parse the rest of the unstructured text line-by-line, structuring it to fit the specified columns.
+        Your entire response MUST be ONLY the raw CSV text. Start directly with the header row provided in the input. Do not add any extra text or formatting, If the 'prompt' says anything about making an excel file, ignore it and proceed with making your CSV.
         data:
-        
+            {data}
+        prompt:
+            {prompt}
         '''
-    meta_prompt += prompt
+    
     print("prompt", meta_prompt)
     """
     Sends a prompt to the Gemini API to request a full HTML template.
@@ -42,7 +49,7 @@ def generate_csv(prompt):
     # api_key = os.environ.get("GEMINI_API_KEY") 
     params = {
         # The key should be handled securely, this is just for structure:
-        "key": "AIzaSyBwJWClkdIcOZlzvgoFdoj7BaYzEscZ6Zg" 
+        "key": os.environ.get("GEMINI_KEY")
     }
     
     # The payload is structured to ask the model for a text response
@@ -99,7 +106,7 @@ def generate_csv(prompt):
     print(response)
     response = io.StringIO(response)
     df = pd.read_csv(response)
-    print(df)
+    print("structured data: \n",df)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Parsed Data')
@@ -107,8 +114,8 @@ def generate_csv(prompt):
     return output
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = "secret_key"
-
 @app.route("/message")
 def message():
     return render_template("message.html")
@@ -118,11 +125,12 @@ def excel_maker():
 @app.route("/get_excel_data", methods=["POST","GET"])
 def get_excel_data():
     if request.method == "POST":
-        data = list(request.get_json())
+        data = request.get_json()
         print(data)
-        data =data[0]
-        prompt = data[0]
-        excel= generate_csv(prompt)
+        info =data.get("data")
+        print("data:", data)
+        prompt = data.get("prompt")
+        excel= generate_csv(prompt, info)
         return send_file(
             excel,
             download_name="Xl.xlsx", # Changed filename to Xl.xlsx as requested
