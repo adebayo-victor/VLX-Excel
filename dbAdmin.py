@@ -1,7 +1,4 @@
-import pandas as pd
-from cs50 import SQL
-import requests
-import io
+
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent"
 def generate_csv(prompt):
