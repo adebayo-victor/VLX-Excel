@@ -116,6 +116,9 @@ def generate_csv(prompt, data):
 app = Flask(__name__)
 CORS(app)
 app.secret_key = "secret_key"
+@app.route("/")
+def index():
+    return render_template("index.html")
 @app.route("/message")
 def message():
     return render_template("message.html")

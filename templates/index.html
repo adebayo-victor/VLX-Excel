@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLX Tools – Empower Your Work</title>
+    <!-- Favicon: Red 'V' from the VLX logo -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB4PSI1MCUiIHk9IjgwJSIgZm9udC1zaXplPSI5MCIgZmlsbD0iI2RjMjYyNiIgZm9udC1mYW1pbHk9IkludGVyLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WPC90ZXh0Pjwvc3ZnPg==" />
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for VLX brand colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vlx-v': '#dc2626', // Red-600
+                        'vlx-l': '#2563eb', // Blue-600
+                        'vlx-x': '#10b981', // Green-500
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    // Custom animation for the background
+                    keyframes: {
+                        'move-gradient': {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                        }
+                    },
+                    animation: {
+                        'move-gradient': 'move-gradient 20s ease infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Styling for the abstract background gradient */
+        .hero-bg {
+            background: linear-gradient(-45deg, #e0f2f1, #e0f7fa, #f0f4c3, #fff);
+            background-size: 400% 400%;
+        }
+        /* Custom logo styling for the V L X colors */
+        .vlx-logo-text {
+            font-size: 2.5rem; /* Large text size for logo */
+            font-weight: 800;  /* Extra bold */
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-white">
+
+    <!-- Header / Navigation (Simple) -->
+    <header class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="flex items-center space-x-1 group">
+                <div class="vlx-logo-text transition duration-300 group-hover:scale-[1.02] transform">
+                    <!-- V is RED (vlx-v) -->
+                    <span style="color:var(--vlx-v)" class="text-vlx-v">V</span>
+                    <!-- L is BLUE (vlx-l) -->
+                    <span style="color:var(--vlx-l)" class="text-vlx-l">L</span>
+                    <!-- X is GREEN (CHANGED from vlx-v to vlx-x) -->
+                    <span style="color:var(--vlx-x)" class="text-vlx-x">X</span>
+                </div>
+                <span class="text-xl font-extrabold text-gray-900 leading-none">Tools</span>
+            </a>
+            <!-- Minimal Navigation -->
+            <nav class="hidden sm:flex space-x-6 text-sm font-medium">
+                <a href="#tools" class="text-gray-600 hover:text-vlx-l transition duration-150">Our Tools</a>
+                <a href="#why-choose" class="text-gray-600 hover:text-vlx-l transition duration-150">Why VLX?</a>
+                <a href="#contact" class="text-gray-600 hover:text-vlx-l transition duration-150">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- 1. Hero Section -->
+        <section id="hero" class="hero-bg py-20 sm:py-32 md:py-40 border-b border-gray-100 relative overflow-hidden animation-move-gradient">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight text-gray-900 tracking-tighter">
+                    Empower Your Work with <span class="bg-clip-text text-transparent bg-gradient-to-r from-vlx-l to-vlx-x">VLX Tools!</span>
+                </h1>
+                <p class="mt-6 max-w-3xl mx-auto text-lg sm:text-xl text-gray-600">
+                    Discover VLX Tools – your go-to web app for essential official tools, built for **speed**, **reliability**, and **efficiency**.
+                </p>
+                <!-- CTA Button -->
+                <div class="mt-10">
+                    <a href="https://vlx-excel.onrender.com/excel_maker" class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-xl shadow-2xl text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-xl md:px-10 transition duration-300 transform hover:scale-[1.03] focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                        Try the AI-Powered Excel Maker
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Our Tools Section -->
+        <section id="tools" class="py-16 sm:py-24 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-extrabold text-center text-gray-900 sm:text-4xl">
+                    Our Tools
+                </h2>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+
+                    <!-- Tool Card 1: AI-Powered Excel Maker (Active) -->
+                    <div class="md:col-span-1 bg-white p-6 rounded-2xl shadow-xl border-t-4 border-vlx-x transform hover:scale-[1.02] transition duration-300">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-vlx-x/10 text-vlx-x">
+                            <!-- Lucide Icon: Spreadsheet / Excel -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-grid"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-gray-900">AI-Powered Excel Maker</h3>
+                        <p class="mt-2 text-sm text-gray-600 font-semibold">
+                            Instantly generate complex spreadsheets from natural language prompts.
+                        </p>
+                        <span class="mt-4 inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                            ✅ Available Now
+                        </span>
+                    </div>
+
+                    <!-- Tool Card 2: PDF Maker (Coming Soon) -->
+                    <div class="md:col-span-1 bg-white p-6 rounded-2xl shadow-md border-t-4 border-gray-300 opacity-60">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-gray-300/30 text-gray-500">
+                            <!-- Lucide Icon: File Text / PDF -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 12H7"/><path d="M17 16H7"/><path d="M17 20H7"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-gray-900">PDF Maker</h3>
+                        <p class="mt-2 text-sm text-gray-600">
+                            Effortlessly create, edit, and convert professional PDF documents.
+                        </p>
+                        <span class="mt-4 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
+                            Coming Soon
+                        </span>
+                    </div>
+
+                    <!-- Tool Card 3: QR Attendance System (Coming Soon) -->
+                    <div class="md:col-span-1 bg-white p-6 rounded-2xl shadow-md border-t-4 border-gray-300 opacity-60">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-gray-300/30 text-gray-500">
+                            <!-- Lucide Icon: Qr Code -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-qr-code"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 7V2.5A2.5 2.5 0 0 1 14.5 5h-.5M7 12H2.5A2.5 2.5 0 0 0 5 14.5v-.5M12 17v4.5A2.5 2.5 0 0 0 9.5 19h.5M17 12h4.5a2.5 2.5 0 0 1-2.5 2.5h-.5"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-gray-900">QR Attendance System</h3>
+                        <p class="mt-2 text-sm text-gray-600">
+                            Streamline attendance tracking with fast, reliable QR code scanning.
+                        </p>
+                        <span class="mt-4 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
+                            Coming Soon
+                        </span>
+                    </div>
+
+                    <!-- Tool Card 4: Blog Website Builder (Coming Soon) -->
+                    <div class="md:col-span-1 bg-white p-6 rounded-2xl shadow-md border-t-4 border-gray-300 opacity-60">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-gray-300/30 text-gray-500">
+                            <!-- Lucide Icon: Pen Tool / Blog -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pen-tool"><path d="m12 19-.6-.6a4 4 0 0 0-5.7 0L2 15l10-10 10 10-3.7 3.7a4 4 0 0 0-5.7 0z"/><path d="M12 19v-4a2 2 0 0 0-2-2H7"/><path d="M17 15a2 2 0 0 0 2-2V8"/><path d="m15 12 3 3"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-gray-900">Blog Website Builder</h3>
+                        <p class="mt-2 text-sm text-gray-600">
+                            Launch a professional blog website in minutes without any coding.
+                        </p>
+                        <span class="mt-4 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
+                            Coming Soon
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Why Choose VLX Tools? Section -->
+        <section id="why-choose" class="py-16 sm:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-extrabold text-center text-gray-900 sm:text-4xl">
+                    Why Choose VLX Tools?
+                </h2>
+                <p class="mt-4 text-lg text-center text-gray-600">
+                    Our foundation is built on the four pillars of modern professional software.
+                </p>
+
+                <div class="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+
+                    <!-- Benefit 1: Fast -->
+                    <div class="text-center p-6 rounded-xl border border-gray-100 shadow-lg transform hover:shadow-xl transition duration-300">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-vlx-v/10 text-vlx-v">
+                            <!-- Lucide Icon: Bolt / Fast -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bolt"><path d="M21 15h-4l-6 6V11H3l4-7h6z"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">Fast</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Near-instant processing times mean you spend less time waiting and more time working.
+                        </p>
+                    </div>
+
+                    <!-- Benefit 2: Reliable -->
+                    <div class="text-center p-6 rounded-xl border border-gray-100 shadow-lg transform hover:shadow-xl transition duration-300">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-vlx-l/10 text-vlx-l">
+                            <!-- Lucide Icon: Shield Check / Reliable -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">Reliable</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Enjoy 99.9% uptime and consistent results, every time, without fail.
+                        </p>
+                    </div>
+
+                    <!-- Benefit 3: Efficient -->
+                    <div class="text-center p-6 rounded-xl border border-gray-100 shadow-lg transform hover:shadow-xl transition duration-300">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-vlx-x/10 text-vlx-x">
+                            <!-- Lucide Icon: Check Circle / Efficient -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">Efficient</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Intelligent workflows that cut down multi-step processes into single clicks.
+                        </p>
+                    </div>
+
+                    <!-- Benefit 4: Light -->
+                    <div class="text-center p-6 rounded-xl border border-gray-100 shadow-lg transform hover:shadow-xl transition duration-300">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-600/10 text-indigo-600">
+                            <!-- Lucide Icon: Feather / Light -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-feather"><path d="M20.2 12.2l-6.9 6.9-6.9-6.9L12 5.3l8.2 8.2z"/><path d="M9 13.9 13.9 9"/></svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-900">Light</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Zero bloat. A minimalist interface that loads quickly and is easy to navigate.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Suggestions/Engagement Section (WhatsApp CTA) -->
+        <section id="contact" class="py-16 bg-gray-50 border-t border-gray-100">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl leading-tight">
+                    Got an Idea for a New Tool?
+                </h2>
+                <p class="mt-3 text-xl text-gray-600">
+                    We're always innovating! Help us build the next essential VLX Tool.
+                </p>
+                <!-- WhatsApp CTA -->
+                <div class="mt-8">
+                    <a href="https://wa.me/2348136390030" target="_blank" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-md text-white bg-green-500 hover:bg-green-600 md:text-lg transition duration-300 transform hover:scale-[1.03] focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-50">
+                        <!-- WhatsApp Icon SVG (simplified) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" class="w-5 h-5 mr-3">
+                            <path d="M380.9 97.1C339.4 59.3 283.4 40 224 40A184.2 184.2 0 0 0 54.3 224c0 33.6 7.2 66.8 21.1 95.5L40 472l117.8-30.8c27.1 14.7 57.8 22.3 88.7 22.3 102 0 184.8-82.8 184.8-184.8 0-48-18.7-95.2-53.5-130zM224 416c-30.4 0-60-7.8-86.4-23.7l-6.4-3.8-67.6 17.7 18-66.2-4.1-6.7c-17.7-28.9-27-62.8-27-97.7 0-93.7 75.8-169.5 169.5-169.5 44.8 0 87.2 17.4 119.5 49.7s49.7 74.7 49.7 119.5c0 93.7-75.8 169.5-169.5 169.5zm70.2-159.2c-3.4-1.7-20.2-9.9-23.5-11.1-3.4-1.3-5.9-1.9-8.4 1.9-2.5 3.8-9.6 11.1-11.7 13.4s-4.3 2.7-8-1.1c-3.8-3.9-15.8-5.8-29.8-18.4-11.7-10.4-19.6-23.3-22.1-27.6-2.5-4.3-.3-6.6 1.7-8.2 1.5-1.5 3.4-3.9 5.1-5.9s2.3-3.4 3.4-5.6 1.7-4.2 2.7-6.2c.9-1.9.4-3.4-.2-4.8s-8.4-20.4-11.4-27.9c-2.9-7.5-6.1-6.5-8.4-6.6-2.1-.1-4.5-.1-6.9-.1-2.5 0-6.5.9-9.9 4.8s-13 12.8-13 31.2c0 18.4 13.3 36.2 15.1 38.6s25.8 39.3 62.4 55.4c33.5 14.7 40.5 11.7 48 11.7 7.5 0 23.4-9.6 27-19s3.6-17.6 2.5-19.7z"/>
+                        </svg>
+                        Message us on WhatsApp: 08136390030
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+            <p class="text-sm text-gray-400">
+                &copy; 2025 VLX Tools. Powered by <span class="font-semibold text-vlx-l">TechLite</span>. All rights reserved.
+            </p>
+            <nav class="mt-4 md:mt-0 space-x-6 text-sm">
+                <a href="#" class="text-gray-400 hover:text-white transition duration-150">About Us</a>
+                <a href="#contact" class="text-gray-400 hover:text-white transition duration-150">Contact</a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-150">Privacy Policy</a>
+            </nav>
+        </div>
+    </footer>
+
+</body>
+</html>
