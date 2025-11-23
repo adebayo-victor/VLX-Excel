@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB4PSI1MCUiIHk9IjgwJSIgZm9udC1zaXplPSI5MCIgZmlsbD0iI2RjMjYyNiIgZm9udC1mYW1pbHk9IkludGVyLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WPC90ZXh0Pjwvc3ZnPg==" />
+    <link rel="stylesheet" href="{{url_for('static', filename='pdf_maker.css')}}">
+    <title>PDF Maker</title>
+    <style>
+        /* Simple styling for better visibility of list items and forms */
+        .doc_type {
+            cursor: pointer;
+            padding: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+            display: inline-block;
+            list-style: none;
+        }
+        .doc_type:hover {
+            background-color: #f0f0f0;
+        }
+        form div {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+            !!! <span class="V">V</span><span class="L">L</span><span class="X">X</span> excel maker !!!
+        </div>
+    <div>
+        <h3>Select a document type</h3>
+        <ul>
+            <li id="letter" class="doc_type">
+                Letter
+            </li>
+            <li id="agreement" class="doc_type">
+                Agreement
+            </li>
+            <li id="memo" class="doc_type">
+                Mem
+            </li>
+            <li id="receipt" class="doc_type">
+                Receipt
+            </li>
+            <li id="report" class="doc_type">
+                Report
+            </li>
+            <li id="proposal" class="doc_type">
+                Proposal
+            </li>
+            <li id="certificate" class="doc_type">
+                Cerificate
+            </li>
+        </ul>
+    </div>
+    <div id="letter_form" hidden>
+        <h3>Letter form</h3>
+        <form>
+            <div><label for="letter_sender_address">Sender's address</label><input id="letter_sender_address"></div>
+            <div><label for="letter_receiver_address">Receiver's address</label><input id="letter_receiver_address"></div>
+            <div><label for="letter_receiver_gender">Receiver's gender</label><input id="letter_receiver_gender"></div>
+            <div><label for="letter_title">Letter title</label><input id="letter_title"></div>
+            <div><label for="letter_body_prompt">Body prompt</label><input id="letter_body_prompt"></div>
+            <div><label for="letter_sender_name">Sender's name</label><input id="letter_sender_name"></div>
+            <div><label for="letter_position">Sender's position</label><input id="letter_position"></div>
+        </form>
+    </div>
+    <div id="memo_form" hidden>
+        <h3>Memo form</h3>
+        <form>
+            <div><label for="memo_sender_address">Sender's address</label><input id="memo_sender_address"></div>
+            <div><label for="memo_receiver_address">Receiver's address</label><input id="memo_receiver_address"></div>
+            <div><label for="memo_receiver_gender">Receiver's gender</label><input id="memo_receiver_gender"></div>
+            <div><label for="memo_title">Letter title</label><input id="memo_title"></div>
+            <div><label for="memo_body_prompt">Body prompt</label><input id="memo_body_prompt"></div>
+            <div><label for="memo_sender_name">Sender's name</label><input id="memo_sender_name"></div>
+            <div><label for="memo_position">Sender's position</label><input id="memo_position"></div>
+        </form>
+    </div>
+    <div id="agreement_form" hidden>
+        <h3>Agreement form</h3>
+        <form>
+            <div><label for="agreement_parties_info">Name and addresses of all parties involved</label><input id="agreement_parties_info"></div>
+            <div><label for="agreement_date">Date of agreement</label><input id="agreement_date"></div>
+            <div><label for="agreement_terms">Terms and conditions</label><textarea id="agreement_terms"></textarea></div>
+        </form>
+    </div>
+    <div id="receipt_form" hidden>
+        <h3>Receipt form</h3>
+        <form>
+            <div><label for="receipt_payer_name">Payer's name</label><input id="receipt_payer_name"></div>
+            <div><label for="receipt_receiver_name">Receiver's name</label><input id="receipt_receiver_name"></div>
+            <div><label for="receipt_amount_paid">Amount paid</label>NGN<input id="receipt_amount_paid"></div>
+            <div><label for="receipt_payment_method">Payment method</label><input id="receipt_payment_method" placeholder="Cash, card, Qr"></div>
+            <div><label for="receipt_description">Describe the transaction</label><textarea id="receipt_description"></textarea></div>
+        </form>
+    </div>
+    <div id="report_form" hidden>
+        <h3>Report form</h3>
+        <form>
+            <div><label for="report_report_title">Report's title</label><input id="report_report_title"></div>
+            <div><label for="report_report_author">Report's author</label><input id="report_report_author"></div>
+            <div><label for="report_report_topic">Report's topic</label><input id="report_report_topic"></div>
+            <div><label for="report_submission_date">Date of submission</label><input id="report_submission_date"></div>
+            <div><label for="report_report_body">Main body and summary</label><textarea id="report_report_body"></textarea></div>
+        </form>
+    </div>
+    <div id="proposal_form" hidden>
+        <h3>Proposal form</h3>
+        <form>
+            <div><label for="proposal_proposal_title">Proposal's title</label><input id="proposal_proposal_title"></div>
+            <div><label for="proposal_proposer_info">Proposer's info</label><input id="proposal_proposer_info"></div>
+            <div><label for="proposal_recipient_info_1">Recipient's info (1)</label><input id="proposal_recipient_info_1"></div>
+            <div><label for="proposal_recipient_info_2">Recipient's info (2)</label><input id="proposal_recipient_info_2"></div>
+            <div><label for="proposal_problem">Problem/Need statement</label><input id="proposal_problem"></div>
+            <div><label for="proposal_solution">Proposed solution</label><input id="proposal_solution"></div>
+            <div><label for="proposal_budget">Cost/Budget details</label><input id="proposal_budget"></div>
+        </form>
+    </div>
+    <div id="certificate_form" hidden>
+        <h3>Certificate form</h3>
+        <form>
+            <div><label for="certificate_certificate_type">Certificate type</label><input id="certificate_certificate_type"></div>
+            <div><label for="certificate_recipient_name">Recipient's name</label><input id="certificate_recipient_name"></div>
+            <div><label for="certificate_certificate_reason">Reason of the certificate</label><input id="certificate_certificate_reason"></div>
+            <div><label for="certificate_issue_date">Date of issue</label><input id="certificate_issue_date"></div>
+            <div><label for="certificate_issuer_name">Issuer's name</label><input id="certificate_issuer_name"></div>
+            <div><label for="certificate_issuer_title">Issuer's title</label><input id="certificate_issuer_title"></div>
+        </form>
+    </div>
+    <button type="submit" id="submit_form" >Submit for PDF Generation</button>
+    
+    <script>
+        // Set the route for the POST request
+        const PDF_GENERATION_ROUTE = 'http://127.0.0.1:2000/doc_maker'; 
+
+        // Array of all form IDs to easily hide them
+        const allFormIds = [
+            "letter_form",
+            "memo_form",
+            "agreement_form",
+            "receipt_form",
+            "report_form",
+            "proposal_form",
+            "certificate_form"
+        ];
+
+        // 1. Input emptying function
+        function emptyInputs() {
+            const inputs = document.querySelectorAll("input, textarea");
+            inputs.forEach(input => {
+                input.value = "";
+            });
+        }
+
+        // 2. Form switching logic (Kept the same as before)
+        const doctypes = document.querySelectorAll(".doc_type");
+        doctypes.forEach(doctype => {
+            doctype.addEventListener("click", () => {
+                
+                emptyInputs();
+
+                allFormIds.forEach(formId => {
+                    const formElement = document.querySelector("#" + formId);
+                    if (formElement) {
+                        formElement.setAttribute("hidden", "");
+                    }
+                });
+
+                let doc_id = doctype.getAttribute("id");
+                doc_id += "_form";
+                
+                const selectedForm = document.querySelector("#" + doc_id);
+                if (selectedForm) {
+                    console.log(`Showing: #${doc_id}`);
+                    selectedForm.removeAttribute("hidden");
+                }
+            });
+        });
+        
+        // 3. Form submission handler for POST request (NEW LOGIC)
+        const submitButton = document.querySelector("#submit_form");
+        if (submitButton) {
+            submitButton.addEventListener("click", async (e) => {
+                e.preventDefault(); // Stop page reload
+                
+                // Find which form is currently visible
+                const visibleFormId = allFormIds.find(id => {
+                    const element = document.querySelector(`#${id}`);
+                    // Check if the element exists and does NOT have the 'hidden' attribute
+                    return element && !element.hasAttribute("hidden");
+                });
+
+                if (!visibleFormId) {
+                    alert("Please select a document type and fill out a form first!");
+                    return;
+                }
+                
+                // Collect the data from the visible form
+                const formElements = document.querySelectorAll(`#${visibleFormId} input, #${visibleFormId} textarea`);
+                let formData = {
+                    document_type: visibleFormId.replace('_form', ''), // e.g., 'letter', 'memo'
+                };
+                
+                formElements.forEach(input => {
+                    if (input.id) {
+                        // The key will be the input's ID (e.g., 'letter_sender_address')
+                        // The value will be the input's content
+                        formData[input.id] = input.value;
+                    }
+                });
+                
+                console.log("Collected Data:", formData);
+
+                // --- MAKE THE POST REQUEST ---
+                try {
+                    // Start a simple loading message
+                    submitButton.textContent = 'Generating PDF...';
+                    submitButton.disabled = true;
+
+                    const response = await fetch(PDF_GENERATION_ROUTE, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData),
+                    });
+
+                    // Handle the response from the server
+                    if (response.ok) {
+                        // Assuming the server returns the PDF as a blob or a download link
+                        console.log("PDF generation request successful!");
+                        alert("PDF generation request sent successfully! Check your network console for the response.");
+                        
+                        // If the server sends the PDF back as a file/blob:
+                        // const blob = await response.blob();
+                        // const url = window.URL.createObjectURL(blob);
+                        // const a = document.createElement('a');
+                        // a.href = url;
+                        // a.download = `${formData.document_type}_document.pdf`;
+                        // document.body.appendChild(a);
+                        // a.click();
+                        // a.remove();
+                        // window.URL.revokeObjectURL(url);
+                        
+                    } else {
+                        const errorText = await response.text();
+                        console.error("Server error:", response.status, errorText);
+                        alert(`Error generating PDF: ${response.status} - ${errorText.substring(0, 50)}...`);
+                    }
+
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    alert("A network error occurred while trying to contact the server.");
+                } finally {
+                    // Reset the button state
+                    submitButton.textContent = 'Submit for PDF Generation';
+                    submitButton.disabled = false;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

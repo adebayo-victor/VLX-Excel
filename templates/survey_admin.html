@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLX Feedback Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=100..900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB4PSI1MCUiIHk9IjgwJSIgZm9udC1zaXplPSI5MCIgZmlsbD0iI2RjMjYyNiIgZm9udC1mYW1pbHk9IkludGVyLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WPC90ZXh0Pjwvc3ZnPg==" />
+    <style>
+        .vlx-logo-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        /* Custom scrollbar for data section */
+        #feedback-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        #feedback-list::-webkit-scrollbar-thumb {
+            background-color: #9ca3af; /* gray-400 */
+            border-radius: 4px;
+        }
+    </style>
+    <!-- Configure Tailwind for VLX brand colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vlx-v': '#dc2626', // Red-600
+                        'vlx-l': '#2563eb', // Blue-600
+                        'vlx-x': '#10b981', // Green-500
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans antialiased bg-gray-50 min-h-screen">
+
+    <!-- Header & Dashboard Title -->
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center mb-2 sm:mb-0">
+                <span class="vlx-logo-text mr-3">
+                    <span class="text-vlx-v">V</span><span class="text-vlx-l">L</span><span class="text-vlx-x">X</span>
+                </span>
+                Feedback Dashboard
+            </h1>
+            <div id="stats" class="text-sm text-gray-600 space-x-4">
+                <span class="font-medium text-vlx-l">Total Records: <span id="total-count" class="font-bold">0</span></span>
+                <span class="font-medium text-vlx-x">Visible: <span id="visible-count" class="font-bold">0</span></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Filter and Search Controls -->
+        <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Filter Feedback</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Search Box -->
+                <div>
+                    <label for="search-term" class="block text-sm font-medium text-gray-700">Search Keywords (All Fields)</label>
+                    <input type="text" id="search-term" placeholder="E.g., Wi-Fi, Library, Canteen..."
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-vlx-l focus:border-vlx-l">
+                </div>
+                
+                <!-- Academic Year Filter -->
+                <div>
+                    <label for="filter-year" class="block text-sm font-medium text-gray-700">Filter by Academic Year</label>
+                    <select id="filter-year" 
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-vlx-l focus:border-vlx-l">
+                        <option value="">All Years</option>
+                        <option value="Year 1">Year 1</option>
+                        <option value="Year 2">Year 2</option>
+                        <option value="Year 3">Year 3</option>
+                        <option value="Year 4">Year 4</option>
+                        <option value="Year 5+">Final/Other</option>
+                    </select>
+                </div>
+
+                <!-- Location Filter -->
+                <div>
+                    <label for="filter-location" class="block text-sm font-medium text-gray-700">Filter by Location</label>
+                    <select id="filter-location" 
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-vlx-l focus:border-vlx-l">
+                        <option value="">All Locations</option>
+                        <option value="On Campus">On Campus</option>
+                        <option value="Off Campus">Off Campus</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feedback List (Card View) -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">Feedback Records</h2>
+            <div id="feedback-list" class="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                <!-- Feedback cards will be injected here -->
+                <div id="no-results" class="hidden text-center p-12 bg-white rounded-xl shadow-inner text-gray-500 text-lg">
+                    No matching feedback records found.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-200 text-center p-4 text-sm text-gray-600 mt-12">
+        <p>&copy; 2025 VLX Tools. Data loaded via backend server.</p>
+    </footer>
+
+    <script>
+        // Global variable to store fetched data
+        let allFeedbackData = [];
+
+        const feedbackList = document.getElementById('feedback-list');
+        const searchTermInput = document.getElementById('search-term');
+        const filterYearSelect = document.getElementById('filter-year');
+        const filterLocationSelect = document.getElementById('filter-location');
+        const totalCountSpan = document.getElementById('total-count');
+        const visibleCountSpan = document.getElementById('visible-count');
+        const noResultsDiv = document.getElementById('no-results');
+
+        // Set initial total count to 0 as data is fetched on load
+        totalCountSpan.textContent = 0;
+
+        /**
+         * Shows or hides a loading spinner in the feedback list area.
+         * @param {boolean} isLoading - True to show the spinner, false to clear the area.
+         */
+        function showLoading(isLoading) {
+            if (isLoading) {
+                feedbackList.innerHTML = `
+                    <div id="loading-spinner" class="text-center p-12 bg-white rounded-xl shadow-inner text-vlx-l text-lg">
+                        <svg class="animate-spin h-8 w-8 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Fetching feedback data from the server...
+                    </div>
+                `;
+                noResultsDiv.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Retries a fetch request with exponential backoff on failure.
+         */
+        async function retryFetch(url, options, maxRetries = 3, delay = 1000) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    } else {
+                        throw new Error(`Server responded with status ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error(`Fetch attempt ${i + 1} failed:`, error.message);
+                    if (i < maxRetries - 1) {
+                        await new Promise(resolve => setTimeout(resolve, delay * (2 ** i))); // Exponential backoff
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Fetches all feedback data from the backend server.
+         */
+        async function fetchFeedback() {
+            showLoading(true);
+            
+            const API_ENDPOINT = 'http://127.0.0.1:2000/fetch_survey';
+            
+            try {
+                // Use a POST request as specified, assuming an empty body is acceptable.
+                const response = await retryFetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    allFeedbackData = await response.json();
+                    
+                    if (!Array.isArray(allFeedbackData)) {
+                        allFeedbackData = [];
+                        throw new Error("Received data is not a valid array format.");
+                    }
+                    
+                    totalCountSpan.textContent = allFeedbackData.length;
+                    filterData(); // Render and filter the fetched data
+                } else {
+                    throw new Error(`Invalid response format (expected JSON, got ${contentType}).`);
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch feedback data:", error);
+                allFeedbackData = []; // Clear data on failure
+                feedbackList.innerHTML = `
+                    <div class="text-center p-12 bg-white rounded-xl shadow-inner text-vlx-v text-lg">
+                        <p class="font-bold mb-2">Error Loading Data</p>
+                        <p>Could not load data from the backend server. Please ensure the server is running.</p>
+                        <p class="text-sm text-gray-500 mt-2">Details: ${error.message}</p>
+                    </div>
+                `;
+                totalCountSpan.textContent = 0;
+                visibleCountSpan.textContent = 0;
+            }
+        }
+
+        /**
+         * Renders the feedback data into responsive cards.
+         * @param {Array} data - The array of feedback objects to display.
+         */
+        function renderFeedback(data) {
+            feedbackList.innerHTML = '';
+            visibleCountSpan.textContent = data.length;
+
+            if (data.length === 0) {
+                noResultsDiv.classList.remove('hidden');
+                return;
+            } else {
+                noResultsDiv.classList.add('hidden');
+            }
+
+            data.forEach(item => {
+                // Determine the tag color based on academic year
+                let yearColor = 'bg-gray-200 text-gray-700';
+                if (item.academic_year.includes('1') || item.academic_year.includes('2')) {
+                    yearColor = 'bg-vlx-x/20 text-vlx-x'; // Green for Pre-Clinical
+                } else if (item.academic_year.includes('3') || item.academic_year.includes('4')) {
+                    yearColor = 'bg-vlx-l/20 text-vlx-l'; // Blue for Clinical
+                } else if (item.academic_year.includes('5')) {
+                    yearColor = 'bg-vlx-v/20 text-vlx-v'; // Red for Senior/Intern
+                }
+
+                // Format timestamp
+                const date = new Date(item.timestamp);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
+
+                const cardHtml = `
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-vlx-l hover:shadow-xl transition duration-300">
+                        <!-- Header with ID, Year, and Location -->
+                        <div class="flex flex-wrap justify-between items-start mb-4 border-b pb-3">
+                            <h3 class="text-lg font-bold text-gray-900">
+                                <span class="text-sm font-medium text-gray-500 mr-2">Record ID: #${item.id}</span> 
+                                Feedback Report
+                            </h3>
+                            <div class="flex space-x-2 text-sm">
+                                <span class="px-3 py-1 rounded-full font-semibold ${yearColor}">
+                                    ${item.academic_year}
+                                </span>
+                                <span class="px-3 py-1 rounded-full font-semibold ${item.location === 'On Campus' ? 'bg-indigo-100 text-indigo-700' : 'bg-yellow-100 text-yellow-700'}">
+                                    ${item.location}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Problem Description -->
+                        <div class="mb-4">
+                            <p class="text-sm font-semibold text-gray-700 mb-1">Problem Description</p>
+                            <p class="text-base text-gray-800 p-3 bg-red-50 border border-vlx-v/30 rounded-lg">
+                                ${item.problem_description}
+                            </p>
+                        </div>
+
+                        <!-- Solution Suggestion -->
+                        <div class="mb-4">
+                            <p class="text-sm font-semibold text-gray-700 mb-1">Proposed Solution</p>
+                            <p class="text-base text-gray-800 p-3 bg-green-50 border border-vlx-x/30 rounded-lg">
+                                ${item.solution_suggestion || 'No specific solution suggested.'}
+                            </p>
+                        </div>
+
+                        <!-- Footer/Timestamp -->
+                        <p class="text-xs text-gray-500 text-right pt-2 border-t mt-4">
+                            Submitted: ${formattedDate}
+                        </p>
+                    </div>
+                `;
+                feedbackList.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        /**
+         * Filters the main data based on search term, year, and location.
+         */
+        function filterData() {
+            const searchTerm = searchTermInput.value.toLowerCase().trim();
+            const filterYear = filterYearSelect.value;
+            const filterLocation = filterLocationSelect.value;
+
+            const filtered = allFeedbackData.filter(item => {
+                // 1. Filter by Academic Year
+                if (filterYear && item.academic_year !== filterYear) {
+                    return false;
+                }
+
+                // 2. Filter by Location
+                if (filterLocation && item.location !== filterLocation) {
+                    return false;
+                }
+
+                // 3. Filter by Search Term (check all text fields)
+                if (searchTerm) {
+                    const searchableText = [
+                        item.problem_description,
+                        item.solution_suggestion,
+                        item.academic_year,
+                        item.location
+                    ].join(' ').toLowerCase();
+                    
+                    if (!searchableText.includes(searchTerm)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+
+            renderFeedback(filtered);
+        }
+
+        // Attach listeners to filter controls
+        searchTermInput.addEventListener('input', filterData);
+        filterYearSelect.addEventListener('change', filterData);
+        filterLocationSelect.addEventListener('change', filterData);
+
+        // Initial fetch on load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchFeedback();
+        });
+
+    </script>
+</body>
+</html>

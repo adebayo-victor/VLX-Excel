@@ -1,0 +1,157 @@
+/*
+ * VLX Data Export Tool Theme Stylesheet
+ * This file centralizes the styling for a consistent look across VLX web tools.
+ */
+
+/* ------------------------------------------------ */
+/* 1. Theme Variables and Global Reset */
+/* ------------------------------------------------ */
+
+:root {
+    --color-blue: #007bff;   /* Blue (Primary/Action) */
+    --color-red: #dc3545;    /* Red (Warning/Error) */
+    --color-green: #28a745;  /* Green (Success/Download) */
+    --color-black: #000000;
+    --color-light-gray: #f8f9fa; /* Background */
+    --color-white: #ffffff;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: var(--color-light-gray);
+    color: var(--color-black);
+}
+
+/* ------------------------------------------------ */
+/* 2. Layout and Structure */
+/* ------------------------------------------------ */
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 8px;
+    /* Subtle shadow for depth */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: var(--color-white);
+    border: 1px solid #ccc;
+}
+
+/* ------------------------------------------------ */
+/* 3. Logo/Branding */
+/* ------------------------------------------------ */
+
+.logo {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Custom VLX Color Coding */
+.logo .V { color: var(--color-red); }
+.logo .L { color: var(--color-blue); }
+.logo .X { color: var(--color-green); }
+
+/* ------------------------------------------------ */
+/* 4. Form Elements (Inputs & Textareas) */
+/* ------------------------------------------------ */
+
+textarea,
+input[type="text"] {
+    width: 100%;
+    min-height: 150px; /* Only relevant for textarea, but keeps selectors clean */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--color-blue);
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+input[type="text"] {
+    min-height: initial; /* Reset min-height for single-line input */
+    height: 50px; 
+}
+
+/* ------------------------------------------------ */
+/* 5. Buttons */
+/* ------------------------------------------------ */
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    display: block;
+    width: 100%;
+}
+
+/* Initial Submit Button (Blue - Primary Action) */
+#submitButton {
+    background-color: var(--color-blue);
+    color: var(--color-white);
+}
+
+#submitButton:hover {
+    background-color: #0056b3;
+}
+
+/* Dynamic Download Button (Green - Success Action) */
+#downloadButton {
+    background-color: var(--color-green);
+    color: var(--color-white);
+    /* Note: display: none is handled by the JS to show/hide */
+    margin-top: 15px; 
+}
+
+#downloadButton:hover {
+    background-color: #1e7e34;
+}
+
+/* A tag wrapping the button to prevent default text underline */
+#downloadButtonLink {
+    text-decoration: none;
+}
+
+/* ------------------------------------------------ */
+/* 6. Checkboxes */
+/* ------------------------------------------------ */
+
+.checkbox-group {
+    border: 1px solid var(--color-black); 
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.checkbox-group label {
+    color: var(--color-black);
+    display: block; /* Ensures the whole line is clickable if enclosed properly */
+    font-weight: normal; /* Override potential bolding from other styles */
+}
+
+/* ------------------------------------------------ */
+/* 7. Notifications */
+/* ------------------------------------------------ */
+
+.notification {
+    padding: 10px;
+    margin-top: 15px;
+    border-radius: 5px;
+    text-align: center;
+    /* display: none is handled by the JS to show/hide */
+    font-weight: bold;
+}
+
+.notification.success {
+    background-color: rgba(40, 167, 69, 0.2); /* Light Green background */
+    color: var(--color-green);
+}
+
+.notification.warning {
+    background-color: rgba(220, 53, 69, 0.2); /* Light Red background */
+    color: var(--color-red);
+}
