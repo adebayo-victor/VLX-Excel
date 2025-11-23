@@ -304,7 +304,7 @@ def doc_maker():
             templ_db.execute("INSERT INTO template_data(key, template) VALUES(?,?)", data_log['key'], data_log['template'])
             print(f"[Timestamp:{datetime.now()}Data entered into templates.db => {data_log}]")
         #return statement returns the link to the created templates in the frontend
-        return jsonify({"response":"successful", "url":f"http://127.0.0.1:2000/view_doc/{key}"})
+        return jsonify({"response":"successful", "url":f"https://vlx-excel.onrender.com/view_doc/{key}"})
 #pdf doc viewer
 @app.route("/view_doc/<key>", methods=["GET", "POST"])
 def view_doc(key):
