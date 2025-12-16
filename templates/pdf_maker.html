@@ -140,7 +140,7 @@
         </form>
     </div>
     <button type="submit" id="submit_form" >Submit for PDF Generation</button>
-    
+    <a href="" id="view_link">VIEW DOCS => </a>
     <script>
         // Set the route for the POST request
         const PDF_GENERATION_ROUTE = 'https://vlx-excel.onrender.com/doc_maker'; 
@@ -240,6 +240,7 @@
                     // Handle the response from the server
                     if (response.ok) {
                         // Assuming the server returns the PDF as a blob or a download link
+                        document.querySelector("#view_link").setAttribute("href", response.url)
                         console.log("PDF generation request successful!");
                         alert("PDF generation request sent successfully! Check your network console for the response.");
                         
