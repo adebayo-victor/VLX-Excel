@@ -5,4 +5,5 @@ from cs50 import SQL
 DB_FILE = "templates.db"
 db = SQL(f"sqlite:///{DB_FILE}")
 
-print(db.execute("SELECT * FROM template_data WHERE key =?", "0066"))
+print(db.execute("SELECT key FROM template_data "))
+

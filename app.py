@@ -288,8 +288,9 @@ def doc_maker():
             |                                                                      |
             | You are a desktop publisher and a front end designer,                |
             | your task is to make documents as html templates with the info below,|
-            | do not use jinja notation                                            |
-            |----------------------------------------------------------------------|
+            | do not use jinja notation,                                           |__________________
+            |at the bottom of the page, the statement, "Powered by techlite" and "Made with vlx tools"|                                           |
+            |----------------------------------------------------------------------|__________________
         '''
         prompt += f'''
         INFO :
@@ -322,14 +323,23 @@ def download_doc(key, subkey):
     templates = templ_db.execute("SELECT * FROM template_data WHERE key = ?", str(key))
     print(templates)
     html_content = templates[int(subkey)]['template']
-    html_content = html_content.replace("'''", "")
+    html_content = html_content.replace("```", "")
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++", html_content)
     pdf_io = io.BytesIO()
     HTML(string=html_content).write_pdf(pdf_io)
+    pdf_io.seek(0)
     return send_file(
         pdf_io,
         as_attachment=True,
         download_name = 'report.pdf',
         mimetype = 'application/pdf'
     )
+@app.route("/bookshop")
+def bookshop(methods=["GET", "POST"]):
+    if request.method == "POST":
+        data = request.form()
+        title = data.get("title")
+        
+    return render_template("bookshop.html")
 if __name__=="__main__":
     app.run(debug=True, port=2000)
