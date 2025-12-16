@@ -336,9 +336,6 @@ def download_doc(key, subkey):
     )
 @app.route("/bookshop")
 def bookshop(methods=["GET", "POST"]):
-    if request.method == "POST":
-        data = request.form()
-        title = data.get("title")
         
     return render_template("bookshop.html")
 if __name__=="__main__":
