@@ -1,168 +1,403 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PDF Maker</title>
-  <style>
-    :root{
-      --accent:#2b6cb0;
-      --bg: #fff;
-      --muted:#6b7280;
-      --success:#16a34a;
-      --danger:#ef4444;
-    }
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:24px;background:#f7fafc;color:#0f172a}
-    .card{background:var(--bg);border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,0.06);padding:20px;max-width:720px;margin:0 auto}
-    .controls{display:flex;gap:12px;align-items:center}
-    button, a.btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-flex;gap:8px;align-items:center}
-    button[disabled]{opacity:.6;cursor:not-allowed}
-    .muted{color:var(--muted);font-size:0.95rem}
-    .overlay{display:flex;gap:12px;align-items:center;padding:12px;margin-top:12px;border-radius:8px;background:#f1f5f9;border:1px solid rgba(15,23,42,0.04)}
-    .overlay.clickable{cursor:pointer}
-    .hidden{display:none}
-    /* spinner */
-    .spinner{
-      width:42px;height:42px;border-radius:50%;border:4px solid rgba(59,130,246,0.14);box-sizing:border-box;position:relative;
-      display:inline-block;
-    }
-    .spinner::after{
-      content:"";position:absolute;inset:4px;border-radius:50%;border:4px solid transparent;border-top-color:var(--accent);animation:spin 1s linear infinite;
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .status-text{font-weight:600}
-    .small{font-size:.9rem;color:var(--muted)}
-    .result-success{display:flex;gap:12px;align-items:center;margin-top:12px}
-    .result-success .ok{color:var(--success);font-weight:700}
-    .error{color:var(--danger);font-weight:600;margin-top:12px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB4PSI1MCUiIHk9IjgwJSIgZm9udC1zaXplPSI5MCIgZmlsbD0iI2RjMjYyNiIgZm9udC1mYW1pbHk9IkludGVyLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WPC90ZXh0Pjwvc3ZnPg==" />
+    <link rel="stylesheet" href="{{url_for('static', filename='pdf_maker.css')}}">
+    <title>PDF Maker</title>
+    <style>
+        /* Simple styling for better visibility of list items and forms */
+        .doc_type {
+            cursor: pointer;
+            padding: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+            display: inline-block;
+            list-style: none;
+        }
+        .doc_type:hover {
+            background-color: #f0f0f0;
+        }
+        form div {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        /* Added UI for processing + result */
+        #processingOverlay {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            border: 1px solid rgba(15,23,42,0.04);
+            cursor: default;
+        }
+        #processingOverlay.clickable { cursor: pointer; }
+        .spinner {
+            width:36px;height:36px;border-radius:50%;border:4px solid rgba(59,130,246,0.14);box-sizing:border-box;position:relative;
+            display:inline-block;
+        }
+        .spinner::after{
+            content:"";position:absolute;inset:4px;border-radius:50%;border:4px solid transparent;border-top-color:#2b6cb0;animation:spin 1s linear infinite;
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        #view_link {
+            display: inline-block;
+            margin-left: 12px;
+            background:#2b6cb0;
+            color:#fff;
+            padding:8px 12px;
+            border-radius:6px;
+            text-decoration:none;
+        }
+        #view_link.hidden { display: none; }
+        #processingText { font-weight:600 }
+        .small { font-size:.9rem; color:#6b7280 }
+    </style>
 </head>
 <body>
-  <main class="card">
-    <h2>Generate PDF</h2>
-    <p class="muted">Click “Generate PDF” to request the server. When the server returns a successful URL, you'll get a button to open it.</p>
+    <div class="logo">
+            !!! <span class="V">V</span><span class="L">L</span><span class="X">X</span> excel maker !!!
+    </div>
 
-    <!-- Example: change data-endpoint to your server route -->
-    <div class="controls">
-      <button id="generateBtn" data-endpoint="/make_pdf">Generate PDF</button>
-      <div id="spinnerWrap" class="overlay hidden" role="status" aria-live="polite" title="Processing document">
+    <div>
+        <h3>Select a document type</h3>
+        <ul>
+            <li id="letter" class="doc_type">
+                Letter
+            </li>
+            <li id="agreement" class="doc_type">
+                Agreement
+            </li>
+            <li id="memo" class="doc_type">
+                Mem
+            </li>
+            <li id="receipt" class="doc_type">
+                Receipt
+            </li>
+            <li id="report" class="doc_type">
+                Report
+            </li>
+            <li id="proposal" class="doc_type">
+                Proposal
+            </li>
+            <li id="certificate" class="doc_type">
+                Cerificate
+            </li>
+        </ul>
+    </div>
+
+    <div id="letter_form" hidden>
+        <h3>Letter form</h3>
+        <form>
+            <div><label for="letter_sender_address">Sender's address</label><input id="letter_sender_address"></div>
+            <div><label for="letter_receiver_address">Receiver's address</label><input id="letter_receiver_address"></div>
+            <div><label for="letter_receiver_gender">Receiver's gender</label><input id="letter_receiver_gender"></div>
+            <div><label for="letter_title">Letter title</label><input id="letter_title"></div>
+            <div><label for="letter_body_prompt">Body prompt</label><input id="letter_body_prompt"></div>
+            <div><label for="letter_sender_name">Sender's name</label><input id="letter_sender_name"></div>
+            <div><label for="letter_position">Sender's position</label><input id="letter_position"></div>
+        </form>
+    </div>
+    <div id="memo_form" hidden>
+        <h3>Memo form</h3>
+        <form>
+            <div><label for="memo_sender_address">Sender's address</label><input id="memo_sender_address"></div>
+            <div><label for="memo_receiver_address">Receiver's address</label><input id="memo_receiver_address"></div>
+            <div><label for="memo_receiver_gender">Receiver's gender</label><input id="memo_receiver_gender"></div>
+            <div><label for="memo_title">Letter title</label><input id="memo_title"></div>
+            <div><label for="memo_body_prompt">Body prompt</label><input id="memo_body_prompt"></div>
+            <div><label for="memo_sender_name">Sender's name</label><input id="memo_sender_name"></div>
+            <div><label for="memo_position">Sender's position</label><input id="memo_position"></div>
+        </form>
+    </div>
+    <div id="agreement_form" hidden>
+        <h3>Agreement form</h3>
+        <form>
+            <div><label for="agreement_parties_info">Name and addresses of all parties involved</label><input id="agreement_parties_info"></div>
+            <div><label for="agreement_date">Date of agreement</label><input id="agreement_date"></div>
+            <div><label for="agreement_terms">Terms and conditions</label><textarea id="agreement_terms"></textarea></div>
+        </form>
+    </div>
+    <div id="receipt_form" hidden>
+        <h3>Receipt form</h3>
+        <form>
+            <div><label for="receipt_payer_name">Payer's name</label><input id="receipt_payer_name"></div>
+            <div><label for="receipt_receiver_name">Receiver's name</label><input id="receipt_receiver_name"></div>
+            <div><label for="receipt_amount_paid">Amount paid</label>NGN<input id="receipt_amount_paid"></div>
+            <div><label for="receipt_payment_method">Payment method</label><input id="receipt_payment_method" placeholder="Cash, card, Qr"></div>
+            <div><label for="receipt_description">Describe the transaction</label><textarea id="receipt_description"></textarea></div>
+        </form>
+    </div>
+    <div id="report_form" hidden>
+        <h3>Report form</h3>
+        <form>
+            <div><label for="report_report_title">Report's title</label><input id="report_report_title"></div>
+            <div><label for="report_report_author">Report's author</label><input id="report_report_author"></div>
+            <div><label for="report_report_topic">Report's topic</label><input id="report_report_topic"></div>
+            <div><label for="report_submission_date">Date of submission</label><input id="report_submission_date"></div>
+            <div><label for="report_report_body">Main body and summary</label><textarea id="report_report_body"></textarea></div>
+        </form>
+    </div>
+    <div id="proposal_form" hidden>
+        <h3>Proposal form</h3>
+        <form>
+            <div><label for="proposal_proposal_title">Proposal's title</label><input id="proposal_proposal_title"></div>
+            <div><label for="proposal_proposer_info">Proposer's info</label><input id="proposal_proposer_info"></div>
+            <div><label for="proposal_recipient_info_1">Recipient's info (1)</label><input id="proposal_recipient_info_1"></div>
+            <div><label for="proposal_recipient_info_2">Recipient's info (2)</label><input id="proposal_recipient_info_2"></div>
+            <div><label for="proposal_problem">Problem/Need statement</label><input id="proposal_problem"></div>
+            <div><label for="proposal_solution">Proposed solution</label><input id="proposal_solution"></div>
+            <div><label for="proposal_budget">Cost/Budget details</label><input id="proposal_budget"></div>
+        </form>
+    </div>
+    <div id="certificate_form" hidden>
+        <h3>Certificate form</h3>
+        <form>
+            <div><label for="certificate_certificate_type">Certificate type</label><input id="certificate_certificate_type"></div>
+            <div><label for="certificate_recipient_name">Recipient's name</label><input id="certificate_recipient_name"></div>
+            <div><label for="certificate_certificate_reason">Reason of the certificate</label><input id="certificate_certificate_reason"></div>
+            <div><label for="certificate_issue_date">Date of issue</label><input id="certificate_issue_date"></div>
+            <div><label for="certificate_issuer_name">Issuer's name</label><input id="certificate_issuer_name"></div>
+            <div><label for="certificate_issuer_title">Issuer's title</label><input id="certificate_issuer_title"></div>
+        </form>
+    </div>
+
+    <button type="submit" id="submit_form" >Submit for PDF Generation</button>
+
+    <!-- Processing overlay and result link -->
+    <div id="processingOverlay" role="status" aria-live="polite" title="Processing document">
         <div class="spinner" id="spinner" aria-hidden="true"></div>
         <div>
-          <div class="status-text" id="processingText">Processing document…</div>
-          <div class="small" id="processingSub">This may take a few seconds.</div>
+            <div id="processingText">Processing document…</div>
+            <div class="small" id="processingSub">This may take a few seconds.</div>
         </div>
-      </div>
+        <a href="#" id="view_link" class="hidden" target="_blank" rel="noopener">VIEW DOCS =></a>
     </div>
 
-    <div id="result" class="result-success hidden">
-      <span class="ok" id="okText">Document ready</span>
-      <a id="openBtn" class="btn" href="#" target="_blank" rel="noopener">Open document</a>
-    </div>
+    <script>
+        // Set the route for the POST request
+        const PDF_GENERATION_ROUTE = 'https://vlx-excel.onrender.com/doc_maker';
 
-    <div id="errorMsg" class="error hidden" role="alert"></div>
-  </main>
+        // Array of all form IDs to easily hide them
+        const allFormIds = [
+            "letter_form",
+            "memo_form",
+            "agreement_form",
+            "receipt_form",
+            "report_form",
+            "proposal_form",
+            "certificate_form"
+        ];
 
-  <script>
-    (function(){
-      const generateBtn = document.getElementById('generateBtn');
-      const spinnerWrap = document.getElementById('spinnerWrap');
-      const processingText = document.getElementById('processingText');
-      const processingSub = document.getElementById('processingSub');
-      const result = document.getElementById('result');
-      const openBtn = document.getElementById('openBtn');
-      const errorMsg = document.getElementById('errorMsg');
-
-      // Holds the URL returned by the server once ready
-      let returnedUrl = "";
-
-      // Helper to show/hide
-      function show(el){ el.classList.remove('hidden') }
-      function hide(el){ el.classList.add('hidden') }
-
-      // Click on spinner/overlay: if url exists open it; otherwise notify user it's still processing
-      spinnerWrap.addEventListener('click', (e) => {
-        if (returnedUrl) {
-          window.open(returnedUrl, '_blank', 'noopener');
-        } else {
-          // brief highlight to notify not ready
-          processingText.textContent = 'Still processing — please wait…';
-          setTimeout(() => processingText.textContent = 'Processing document…', 1600);
+        // 1. Input emptying function
+        function emptyInputs() {
+            const inputs = document.querySelectorAll("input, textarea");
+            inputs.forEach(input => {
+                input.value = "";
+            });
         }
-      });
 
-      // Main click handler to make request
-      generateBtn.addEventListener('click', async function (e) {
-        const endpoint = generateBtn.getAttribute('data-endpoint') || '/make_pdf';
+        // 2. Form switching logic (Kept the same as before)
+        const doctypes = document.querySelectorAll(".doc_type");
+        doctypes.forEach(doctype => {
+            doctype.addEventListener("click", () => {
+                
+                emptyInputs();
 
-        // UI: start processing
-        generateBtn.disabled = true;
-        hide(result);
-        hide(errorMsg);
-        returnedUrl = "";
-        processingText.textContent = 'Processing document…';
-        processingSub.textContent = 'This may take a few seconds.';
-        spinnerWrap.classList.add('clickable');
-        show(spinnerWrap);
+                allFormIds.forEach(formId => {
+                    const formElement = document.querySelector("#" + formId);
+                    if (formElement) {
+                        formElement.setAttribute("hidden", "");
+                    }
+                });
 
-        try {
-          // Example POST — if you need different payload, update here.
-          const payload = {
-            // If your template has form data, collect it and include it here
-            // For example: document.getElementById('myInput').value
-          };
+                let doc_id = doctype.getAttribute("id");
+                doc_id += "_form";
+                
+                const selectedForm = document.querySelector("#" + doc_id);
+                if (selectedForm) {
+                    console.log(`Showing: #${doc_id}`);
+                    selectedForm.removeAttribute("hidden");
+                }
+            });
+        });
+        
+        // Processing UI elements
+        const submitButton = document.querySelector("#submit_form");
+        const processingOverlay = document.getElementById('processingOverlay');
+        const processingText = document.getElementById('processingText');
+        const processingSub = document.getElementById('processingSub');
+        const viewLink = document.getElementById('view_link');
+        const spinner = document.getElementById('spinner');
 
-          const resp = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              // Add auth or CSRF headers here if needed
-            },
-            body: JSON.stringify(payload)
-          });
+        // holds returned url from server once available
+        let returnedUrl = "";
 
-          if (!resp.ok) {
-            throw new Error('Server returned ' + resp.status);
-          }
+        // helper to show/hide elements
+        function show(el){ el.style.display = (el === processingOverlay) ? 'flex' : 'inline-block'; el.classList.remove('hidden'); }
+        function hide(el){ el.style.display = 'none'; el.classList.add('hidden'); }
 
-          const data = await resp.json();
+        // clicking the overlay: open url if available, otherwise give brief message
+        processingOverlay.addEventListener('click', (e) => {
+            // If clicked on the view link itself, let the link behave normally
+            if (e.target === viewLink) return;
+            if (returnedUrl) {
+                window.open(returnedUrl, '_blank', 'noopener');
+            } else {
+                const prev = processingText.textContent;
+                processingText.textContent = 'Still processing — please wait…';
+                setTimeout(() => processingText.textContent = prev, 1400);
+            }
+        });
 
-          // Expected format: {"response":"successful","url":"https://..."}
-          if (data && (data.response === 'successful' || data.status === 'ok') && data.url) {
-            returnedUrl = data.url;
+        // 3. Form submission handler for POST request (UPDATED LOGIC)
+        if (submitButton) {
+            submitButton.addEventListener("click", async (e) => {
+                e.preventDefault(); // Stop page reload
+                
+                // Find which form is currently visible
+                const visibleFormId = allFormIds.find(id => {
+                    const element = document.querySelector(`#${id}`);
+                    // Check if the element exists and does NOT have the 'hidden' attribute
+                    return element && !element.hasAttribute("hidden");
+                });
 
-            // Update UI to show result button
-            openBtn.href = returnedUrl;
-            openBtn.textContent = 'Open document';
-            show(result);
+                if (!visibleFormId) {
+                    alert("Please select a document type and fill out a form first!");
+                    return;
+                }
+                
+                // Collect the data from the visible form
+                const formElements = document.querySelectorAll(`#${visibleFormId} input, #${visibleFormId} textarea`);
+                let formData = {
+                    document_type: visibleFormId.replace('_form', ''), // e.g., 'letter', 'memo'
+                };
+                
+                formElements.forEach(input => {
+                    if (input.id) {
+                        formData[input.id] = input.value;
+                    }
+                });
+                
+                console.log("Collected Data:", formData);
 
-            // Turn spinner into success message
-            processingText.textContent = 'Document ready — click Open document or the animation';
-            processingSub.textContent = '';
-            // Keep overlay visible but no longer clickable would be fine; we keep clickable to open the url.
-            // Optionally, remove spinner animation:
-            spinnerWrap.querySelector('.spinner').style.borderColor = 'rgba(34,197,94,0.15)';
-            spinnerWrap.querySelector('.spinner').style.boxShadow = '0 0 0 3px rgba(34,197,94,0.06)';
+                // --- MAKE THE POST REQUEST ---
+                try {
+                    // Start UI loading state
+                    submitButton.textContent = 'Generating PDF...';
+                    submitButton.disabled = true;
+                    returnedUrl = "";
+                    hide(viewLink);
+                    processingText.textContent = 'Processing document…';
+                    processingSub.textContent = 'This may take a few seconds.';
+                    processingOverlay.classList.add('clickable');
+                    show(processingOverlay);
 
-            // Re-enable the generate button in case user wants to run again
-            generateBtn.disabled = false;
-          } else {
-            // Unexpected response object
-            throw new Error('Unexpected response from server: ' + JSON.stringify(data));
-          }
-        } catch (err) {
-          console.error(err);
-          errorMsg.textContent = 'Could not generate document: ' + (err.message || err);
-          show(errorMsg);
-          generateBtn.disabled = false;
-          hide(result);
-        } finally {
-          // Keep overlay visible while ready so user can click it; if there was an error hide overlay.
-          if (!returnedUrl) {
-            hide(spinnerWrap);
-          }
+                    const response = await fetch(PDF_GENERATION_ROUTE, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData),
+                    });
+
+                    // Try to parse JSON response (expected {"response":"successful","url":"..."}).
+                    // Some backends may return a file blob; we handle JSON first.
+                    if (response.ok) {
+                        const contentType = response.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            const data = await response.json();
+                            console.log('Server JSON response:', data);
+                            if (data && (data.response === 'successful' || data.status === 'ok') && data.url) {
+                                returnedUrl = data.url;
+                                viewLink.setAttribute('href', returnedUrl);
+                                viewLink.textContent = 'VIEW DOCS => Open document';
+                                show(viewLink);
+                                processingText.textContent = 'Document ready — click to open';
+                                processingSub.textContent = '';
+                                // style spinner to indicate success
+                                spinner.style.borderColor = 'rgba(34,197,94,0.15)';
+                                spinner.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.06)';
+                                // optionally re-enable submit for another run
+                                submitButton.disabled = false;
+                            } else {
+                                // Unexpected JSON payload
+                                throw new Error('Unexpected JSON response: ' + JSON.stringify(data));
+                            }
+                        } else {
+                            // Not JSON — maybe the server returned a redirect link in response.url or a blob
+                            // If response.url points to the generated doc, use that
+                            const possibleUrl = response.url && response.url !== window.location.href ? response.url : null;
+                            if (possibleUrl) {
+                                returnedUrl = possibleUrl;
+                                viewLink.setAttribute('href', returnedUrl);
+                                viewLink.textContent = 'VIEW DOCS => Open document';
+                                show(viewLink);
+                                processingText.textContent = 'Document ready — click to open';
+                                processingSub.textContent = '';
+                                submitButton.disabled = false;
+                            } else {
+                                // Attempt to treat as blob and trigger download (fallback)
+                                try {
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `${formData.document_type}_document.pdf`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    a.remove();
+                                    window.URL.revokeObjectURL(url);
+                                    processingText.textContent = 'PDF downloaded';
+                                    processingSub.textContent = '';
+                                } catch (blobErr) {
+                                    throw new Error('Unknown response from server and failed to download blob.');
+                                } finally {
+                                    submitButton.disabled = false;
+                                }
+                            }
+                        }
+                    } else {
+                        const errorText = await response.text();
+                        console.error("Server error:", response.status, errorText);
+                        throw new Error(`Error generating PDF: ${response.status} - ${errorText}`);
+                    }
+
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    alert("A network or server error occurred while trying to contact the server.\n" + (error.message || error));
+                    processingText.textContent = 'Processing failed';
+                    processingSub.textContent = '';
+                    processingOverlay.classList.remove('clickable');
+                } finally {
+                    // If we don't have a returnedUrl, hide overlay after a short delay (so user sees result)
+                    if (!returnedUrl) {
+                        setTimeout(() => {
+                            hide(processingOverlay);
+                        }, 900);
+                    } else {
+                        // keep overlay visible so users can click it; viewLink is also shown
+                        processingOverlay.style.display = 'flex';
+                    }
+                    submitButton.textContent = 'Submit for PDF Generation';
+                    submitButton.disabled = false;
+                }
+            });
         }
-      });
-    })();
-  </script>
+    </script>
 </body>
 </html>
