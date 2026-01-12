@@ -1,414 +1,518 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB4PSI1MCUiIHk9IjgwJSIgZm9udC1zaXplPSI5MCIgZmlsbD0iI2RjMjYyNiIgZm9udC1mYW1pbHk9IkludGVyLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WPC90ZXh0Pjwvc3ZnPg==" />
-    <link rel="stylesheet" href="{{url_for('static', filename='pdf_maker.css')}}">
-    <title>PDF Maker</title>
-    <style>
-        /* Simple styling for better visibility of list items and forms */
-        .doc_type {
-            cursor: pointer;
-            padding: 5px;
-            border: 1px solid #ccc;
-            margin-bottom: 5px;
-            display: inline-block;
-            list-style: none;
-        }
-        .doc_type:hover {
-            background-color: #f0f0f0;
-        }
-        form div {
-            margin-bottom: 10px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB4PSI1MCUiIHk9IjgwJSIgZm9udC1zaXplPSI5MCIgZmlsbD0iI2RjMjYyNiIgZm9udC1mYW1pbHk9IkludGVyLCBzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WPC90ZXh0Pjwvc3ZnPg==" />
+  <link rel="stylesheet" href="{{url_for('static', filename='pdf_maker.css')}}">
+  <title>PDF Maker</title>
+  <style>
+    :root{
+      --accent:#2463a8;
+      --accent-600:#1f4f86;
+      --bg:#ffffff;
+      --muted:#6b7280;
+      --card:#f8fafc;
+      --success:#16a34a;
+      --danger:#ef4444;
+      --radius:10px;
+    }
 
-        /* Added UI for processing + result */
-        #processingOverlay {
-            display: none;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            margin-top: 12px;
-            border-radius: 8px;
-            background: #f1f5f9;
-            border: 1px solid rgba(15,23,42,0.04);
-            cursor: default;
-        }
-        #processingOverlay.clickable { cursor: pointer; }
-        .spinner {
-            width:36px;height:36px;border-radius:50%;border:4px solid rgba(59,130,246,0.14);box-sizing:border-box;position:relative;
-            display:inline-block;
-        }
-        .spinner::after{
-            content:"";position:absolute;inset:4px;border-radius:50%;border:4px solid transparent;border-top-color:#2b6cb0;animation:spin 1s linear infinite;
-        }
-        @keyframes spin{to{transform:rotate(360deg)}}
-        #view_link {
-            display: inline-block;
-            margin-left: 12px;
-            background:#2b6cb0;
-            color:#fff;
-            padding:8px 12px;
-            border-radius:6px;
-            text-decoration:none;
-        }
-        #view_link.hidden { display: none; }
-        #processingText { font-weight:600 }
-        .small { font-size:.9rem; color:#6b7280 }
-    </style>
+    /* Page layout */
+    body{
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      margin: 20px;
+      background:#f1f5f9;
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .brand {
+      grid-column: 1 / -1;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:6px;
+    }
+    .logo {
+      background:linear-gradient(180deg,#e6f0ff,#dbeeff);
+      color:var(--accent);
+      font-weight:800;
+      padding:8px 12px;
+      border-radius:8px;
+      box-shadow:0 1px 0 rgba(15,23,42,0.03);
+    }
+    .page-title { font-weight:700; font-size:1.05rem; color:#0f172a; }
+
+    /* Sidebar doc type list */
+    .sidebar {
+      background:var(--bg);
+      border-radius:var(--radius);
+      padding:12px;
+      box-shadow:0 1px 3px rgba(15,23,42,0.04);
+      border:1px solid rgba(15,23,42,0.04);
+    }
+    .sidebar h3 { margin:0 0 8px 0; font-size:0.95rem; color:var(--muted) }
+    .doc_list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .doc_type {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid rgba(15,23,42,0.04);
+      background: #fff;
+      cursor:pointer;
+      transition: all .12s ease;
+      user-select:none;
+      font-weight:600;
+      color:#0f172a;
+    }
+    .doc_type:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(8,38,82,0.04); }
+    .doc_type.active {
+      background: linear-gradient(90deg, rgba(36,99,168,0.06), rgba(36,99,168,0.03));
+      border-color: rgba(36,99,168,0.14);
+      box-shadow: inset 0 0 0 1px rgba(36,99,168,0.02);
+      color: var(--accent-600);
+    }
+    .doc_type .label { font-weight:700; font-size:0.95rem; }
+    .doc_type .hint { font-size:0.85rem; color:var(--muted); }
+
+    /* Main panel with forms and controls */
+    .main {
+      background:var(--bg);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,0.04);
+      border:1px solid rgba(15,23,42,0.04);
+    }
+
+    .form-area { min-height: 360px; }
+    .form-area h3 { margin-top:0; margin-bottom:8px; }
+    form div { margin-bottom:12px; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:#0f172a; }
+    input, textarea {
+      width:100%;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid rgba(15,23,42,0.06);
+      background: #fbfdff;
+      box-sizing:border-box;
+      resize:vertical;
+      font-size:0.95rem;
+      color:#0f172a;
+    }
+
+    /* Controls row */
+    .controls {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:10px;
+    }
+    .btn {
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:700;
+      text-decoration:none;
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+    }
+    .btn.secondary {
+      background:transparent;
+      color:var(--muted);
+      border:1px solid rgba(15,23,42,0.06);
+      font-weight:600;
+    }
+    .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+    /* Processing overlay (inline) */
+    #processingOverlay {
+      display:none;
+      align-items:center;
+      gap:12px;
+      padding:12px;
+      margin-left:auto;
+      border-radius:8px;
+      background:#f8fafc;
+      border:1px solid rgba(15,23,42,0.04);
+      cursor:default;
+    }
+    #processingOverlay.clickable { cursor:pointer; }
+    .spinner {
+      width:36px;height:36px;border-radius:50%;border:4px solid rgba(36,99,168,0.12);box-sizing:border-box;position:relative;
+      display:inline-block;
+    }
+    .spinner::after{
+      content:"";position:absolute;inset:4px;border-radius:50%;border:4px solid transparent;border-top-color:var(--accent);animation:spin 1s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    #view_link {
+      display:inline-block;
+      background:var(--accent);
+      color:#fff;
+      padding:8px 12px;
+      border-radius:8px;
+      text-decoration:none;
+      font-weight:700;
+    }
+    #view_link.hidden { display:none; }
+
+    .muted { color:var(--muted); font-size:0.95rem; }
+    .small { font-size:0.9rem; color:var(--muted); }
+
+    /* Responsive */
+    @media (max-width: 880px) {
+      .container { grid-template-columns: 1fr; }
+      .sidebar { order:2; }
+      .main { order:1; }
+      .brand { margin-bottom:14px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="logo">
-            !!! <span class="V">V</span><span class="L">L</span><span class="X">X</span> excel maker !!!
+  <div class="container">
+    <div class="brand">
+      <div class="logo">VLX</div>
+      <div class="page-title">PDF & Document Maker</div>
+    </div>
+
+    <aside class="sidebar" aria-label="Document types">
+      <h3>Select type</h3>
+      <div class="doc_list" id="docList">
+        <div id="letter" class="doc_type"><span class="label">Letter</span><span class="hint">formal letter</span></div>
+        <div id="agreement" class="doc_type"><span class="label">Agreement</span><span class="hint">contracts</span></div>
+        <div id="memo" class="doc_type"><span class="label">Memo</span><span class="hint">internal memo</span></div>
+        <div id="receipt" class="doc_type"><span class="label">Receipt</span><span class="hint">payment</span></div>
+        <div id="report" class="doc_type"><span class="label">Report</span><span class="hint">summary</span></div>
+        <div id="proposal" class="doc_type"><span class="label">Proposal</span><span class="hint">pitch</span></div>
+        <div id="certificate" class="doc_type"><span class="label">Certificate</span><span class="hint">award</span></div>
+        <div id="list" class="doc_type"><span class="label">List</span><span class="hint">items / structured</span></div>
+      </div>
+    </aside>
+
+    <main class="main" role="main">
+      <div class="form-area" id="forms">
+        <!-- Original forms preserved (IDs must remain) -->
+        <div id="letter_form" hidden>
+            <h3>Letter form</h3>
+            <form>
+                <div><label for="letter_sender_address">Sender's address</label><input id="letter_sender_address"></div>
+                <div><label for="letter_receiver_address">Receiver's address</label><input id="letter_receiver_address"></div>
+                <div><label for="letter_receiver_gender">Receiver's gender</label><input id="letter_receiver_gender"></div>
+                <div><label for="letter_title">Letter title</label><input id="letter_title"></div>
+                <div><label for="letter_body_prompt">Body prompt</label><input id="letter_body_prompt"></div>
+                <div><label for="letter_sender_name">Sender's name</label><input id="letter_sender_name"></div>
+                <div><label for="letter_position">Sender's position</label><input id="letter_position"></div>
+            </form>
         </div>
-    <div>
-        <h3>Select a document type</h3>
-        <ul>
-            <li id="letter" class="doc_type">
-                Letter
-            </li>
-            <li id="agreement" class="doc_type">
-                Agreement
-            </li>
-            <li id="memo" class="doc_type">
-                Mem
-            </li>
-            <li id="receipt" class="doc_type">
-                Receipt
-            </li>
-            <li id="report" class="doc_type">
-                Report
-            </li>
-            <li id="proposal" class="doc_type">
-                Proposal
-            </li>
-            <li id="certificate" class="doc_type">
-                Cerificate
-            </li>
-            <li id="list" class="doc_type">
-                List
-            </li>
-        </ul>
-    </div>
-    <div id="letter_form" hidden>
-        <h3>Letter form</h3>
-        <form>
-            <div><label for="letter_sender_address">Sender's address</label><input id="letter_sender_address"></div>
-            <div><label for="letter_receiver_address">Receiver's address</label><input id="letter_receiver_address"></div>
-            <div><label for="letter_receiver_gender">Receiver's gender</label><input id="letter_receiver_gender"></div>
-            <div><label for="letter_title">Letter title</label><input id="letter_title"></div>
-            <div><label for="letter_body_prompt">Body prompt</label><input id="letter_body_prompt"></div>
-            <div><label for="letter_sender_name">Sender's name</label><input id="letter_sender_name"></div>
-            <div><label for="letter_position">Sender's position</label><input id="letter_position"></div>
-        </form>
-    </div>
-    <div id="memo_form" hidden>
-        <h3>Memo form</h3>
-        <form>
-            <div><label for="memo_sender_address">Sender's address</label><input id="memo_sender_address"></div>
-            <div><label for="memo_receiver_address">Receiver's address</label><input id="memo_receiver_address"></div>
-            <div><label for="memo_receiver_gender">Receiver's gender</label><input id="memo_receiver_gender"></div>
-            <div><label for="memo_title">Letter title</label><input id="memo_title"></div>
-            <div><label for="memo_body_prompt">Body prompt</label><input id="memo_body_prompt"></div>
-            <div><label for="memo_sender_name">Sender's name</label><input id="memo_sender_name"></div>
-            <div><label for="memo_position">Sender's position</label><input id="memo_position"></div>
-        </form>
-    </div>
-    <div id="agreement_form" hidden>
-        <h3>Agreement form</h3>
-        <form>
-            <div><label for="agreement_parties_info">Name and addresses of all parties involved</label><input id="agreement_parties_info"></div>
-            <div><label for="agreement_date">Date of agreement</label><input id="agreement_date"></div>
-            <div><label for="agreement_terms">Terms and conditions</label><textarea id="agreement_terms"></textarea></div>
-        </form>
-    </div>
-    <div id="receipt_form" hidden>
-        <h3>Receipt form</h3>
-        <form>
-            <div><label for="receipt_payer_name">Payer's name</label><input id="receipt_payer_name"></div>
-            <div><label for="receipt_receiver_name">Receiver's name</label><input id="receipt_receiver_name"></div>
-            <div><label for="receipt_amount_paid">Amount paid</label>NGN<input id="receipt_amount_paid"></div>
-            <div><label for="receipt_payment_method">Payment method</label><input id="receipt_payment_method" placeholder="Cash, card, Qr"></div>
-            <div><label for="receipt_description">Describe the transaction</label><textarea id="receipt_description"></textarea></div>
-        </form>
-    </div>
-    <div id="report_form" hidden>
-        <h3>Report form</h3>
-        <form>
-            <div><label for="report_report_title">Report's title</label><input id="report_report_title"></div>
-            <div><label for="report_report_author">Report's author</label><input id="report_report_author"></div>
-            <div><label for="report_report_topic">Report's topic</label><input id="report_report_topic"></div>
-            <div><label for="report_submission_date">Date of submission</label><input id="report_submission_date"></div>
-            <div><label for="report_report_body">Main body and summary</label><textarea id="report_report_body"></textarea></div>
-        </form>
-    </div>
-    <div id="proposal_form" hidden>
-        <h3>Proposal form</h3>
-        <form>
-            <div><label for="proposal_proposal_title">Proposal's title</label><input id="proposal_proposal_title"></div>
-            <div><label for="proposal_proposer_info">Proposer's info</label><input id="proposal_proposer_info"></div>
-            <div><label for="proposal_recipient_info_1">Recipient's info (1)</label><input id="proposal_recipient_info_1"></div>
-            <div><label for="proposal_recipient_info_2">Recipient's info (2)</label><input id="proposal_recipient_info_2"></div>
-            <div><label for="proposal_problem">Problem/Need statement</label><input id="proposal_problem"></div>
-            <div><label for="proposal_solution">Proposed solution</label><input id="proposal_solution"></div>
-            <div><label for="proposal_budget">Cost/Budget details</label><input id="proposal_budget"></div>
-        </form>
-    </div>
-    <div id="certificate_form" hidden>
-        <h3>Certificate form</h3>
-        <form>
-            <div><label for="certificate_certificate_type">Certificate type</label><input id="certificate_certificate_type"></div>
-            <div><label for="certificate_recipient_name">Recipient's name</label><input id="certificate_recipient_name"></div>
-            <div><label for="certificate_certificate_reason">Reason of the certificate</label><input id="certificate_certificate_reason"></div>
-            <div><label for="certificate_issue_date">Date of issue</label><input id="certificate_issue_date"></div>
-            <div><label for="certificate_issuer_name">Issuer's name</label><input id="certificate_issuer_name"></div>
-            <div><label for="certificate_issuer_title">Issuer's title</label><input id="certificate_issuer_title"></div>
-        </form>
-    </div>
 
-    <!-- NEW: List document type -->
-    <div id="list_form" hidden>
-        <h3>List form</h3>
-        <form>
-            <div><label for="list_prompt">Prompt</label><input id="list_prompt" placeholder="Describe the list or formatting instructions"></div>
-            <div><label for="list_data">Data (one item per line or CSV)</label><textarea id="list_data" rows="8" placeholder="Paste your raw data here..."></textarea></div>
-        </form>
-    </div>
+        <div id="memo_form" hidden>
+            <h3>Memo form</h3>
+            <form>
+                <div><label for="memo_sender_address">Sender's address</label><input id="memo_sender_address"></div>
+                <div><label for="memo_receiver_address">Receiver's address</label><input id="memo_receiver_address"></div>
+                <div><label for="memo_receiver_gender">Receiver's gender</label><input id="memo_receiver_gender"></div>
+                <div><label for="memo_title">Letter title</label><input id="memo_title"></div>
+                <div><label for="memo_body_prompt">Body prompt</label><input id="memo_body_prompt"></div>
+                <div><label for="memo_sender_name">Sender's name</label><input id="memo_sender_name"></div>
+                <div><label for="memo_position">Sender's position</label><input id="memo_position"></div>
+            </form>
+        </div>
 
-    <button type="submit" id="submit_form" >Submit for PDF Generation</button>
+        <div id="agreement_form" hidden>
+            <h3>Agreement form</h3>
+            <form>
+                <div><label for="agreement_parties_info">Name and addresses of all parties involved</label><input id="agreement_parties_info"></div>
+                <div><label for="agreement_date">Date of agreement</label><input id="agreement_date" type="date"></div>
+                <div><label for="agreement_terms">Terms and conditions</label><textarea id="agreement_terms"></textarea></div>
+            </form>
+        </div>
 
-    <!-- Processing overlay and result link -->
-    <div id="processingOverlay" role="status" aria-live="polite" title="Processing document">
-        <div class="spinner" id="spinner" aria-hidden="true"></div>
-        <div>
+        <div id="receipt_form" hidden>
+            <h3>Receipt form</h3>
+            <form>
+                <div><label for="receipt_payer_name">Payer's name</label><input id="receipt_payer_name"></div>
+                <div><label for="receipt_receiver_name">Receiver's name</label><input id="receipt_receiver_name"></div>
+                <div><label for="receipt_amount_paid">Amount paid</label><div style="display:flex;gap:8px;align-items:center"><span class="muted">NGN</span><input id="receipt_amount_paid" style="flex:1"></div></div>
+                <div><label for="receipt_payment_method">Payment method</label><input id="receipt_payment_method" placeholder="Cash, card, Qr"></div>
+                <div><label for="receipt_description">Describe the transaction</label><textarea id="receipt_description"></textarea></div>
+            </form>
+        </div>
+
+        <div id="report_form" hidden>
+            <h3>Report form</h3>
+            <form>
+                <div><label for="report_report_title">Report's title</label><input id="report_report_title"></div>
+                <div><label for="report_report_author">Report's author</label><input id="report_report_author"></div>
+                <div><label for="report_report_topic">Report's topic</label><input id="report_report_topic"></div>
+                <div><label for="report_submission_date">Date of submission</label><input id="report_submission_date" type="date"></div>
+                <div><label for="report_report_body">Main body and summary</label><textarea id="report_report_body"></textarea></div>
+            </form>
+        </div>
+
+        <div id="proposal_form" hidden>
+            <h3>Proposal form</h3>
+            <form>
+                <div><label for="proposal_proposal_title">Proposal's title</label><input id="proposal_proposal_title"></div>
+                <div><label for="proposal_proposer_info">Proposer's info</label><input id="proposal_proposer_info"></div>
+                <div><label for="proposal_recipient_info_1">Recipient's info (1)</label><input id="proposal_recipient_info_1"></div>
+                <div><label for="proposal_recipient_info_2">Recipient's info (2)</label><input id="proposal_recipient_info_2"></div>
+                <div><label for="proposal_problem">Problem/Need statement</label><input id="proposal_problem"></div>
+                <div><label for="proposal_solution">Proposed solution</label><input id="proposal_solution"></div>
+                <div><label for="proposal_budget">Cost/Budget details</label><input id="proposal_budget"></div>
+            </form>
+        </div>
+
+        <div id="certificate_form" hidden>
+            <h3>Certificate form</h3>
+            <form>
+                <div><label for="certificate_certificate_type">Certificate type</label><input id="certificate_certificate_type"></div>
+                <div><label for="certificate_recipient_name">Recipient's name</label><input id="certificate_recipient_name"></div>
+                <div><label for="certificate_certificate_reason">Reason of the certificate</label><input id="certificate_certificate_reason"></div>
+                <div><label for="certificate_issue_date">Date of issue</label><input id="certificate_issue_date" type="date"></div>
+                <div><label for="certificate_issuer_name">Issuer's name</label><input id="certificate_issuer_name"></div>
+                <div><label for="certificate_issuer_title">Issuer's title</label><input id="certificate_issuer_title"></div>
+            </form>
+        </div>
+
+        <!-- NEW: List document type -->
+        <div id="list_form" hidden>
+            <h3>List form</h3>
+            <form>
+                <div><label for="list_prompt">Prompt</label><input id="list_prompt" placeholder="Describe the list or formatting instructions"></div>
+                <div><label for="list_data">Data (one item per line or CSV)</label><textarea id="list_data" rows="8" placeholder="Paste your raw data here..."></textarea></div>
+            </form>
+        </div>
+      </div>
+
+      <div class="controls" aria-hidden="false">
+        <button id="submit_form" class="btn">Submit for PDF Generation</button>
+        <button id="clear_form" class="btn secondary" type="button">Clear fields</button>
+
+        <div id="processingOverlay" role="status" aria-live="polite" title="Processing document">
+          <div class="spinner" id="spinner" aria-hidden="true"></div>
+          <div>
             <div id="processingText">Processing document…</div>
             <div class="small" id="processingSub">This may take a few seconds.</div>
+          </div>
+          <a href="#" id="view_link" class="hidden" target="_blank" rel="noopener">VIEW DOCS =></a>
         </div>
-        <a href="#" id="view_link" class="hidden" target="_blank" rel="noopener">VIEW DOCS =></a>
-    </div>
+      </div>
+    </main>
+  </div>
 
-    <script>
-        // Set the route for the POST request
-        const PDF_GENERATION_ROUTE = 'https://vlx-excel.onrender.com/doc_maker';
+  <script>
+    // Keep the same endpoint (do not alter)
+    const PDF_GENERATION_ROUTE = 'https://vlx-excel.onrender.com/doc_maker';
 
-        // Array of all form IDs to easily hide them — added list_form
-        const allFormIds = [
-            "letter_form",
-            "memo_form",
-            "agreement_form",
-            "receipt_form",
-            "report_form",
-            "proposal_form",
-            "certificate_form",
-            "list_form"
-        ];
+    // Form ID list (unchanged)
+    const allFormIds = [
+      "letter_form",
+      "memo_form",
+      "agreement_form",
+      "receipt_form",
+      "report_form",
+      "proposal_form",
+      "certificate_form",
+      "list_form"
+    ];
 
-        // 1. Input emptying function
-        function emptyInputs() {
-            const inputs = document.querySelectorAll("input, textarea");
-            inputs.forEach(input => {
-                input.value = "";
-            });
+    // Utility functions
+    function emptyInputs() {
+      const inputs = document.querySelectorAll("#forms input, #forms textarea");
+      inputs.forEach(input => input.value = "");
+    }
+
+    // Sidebar/doc-type behavior (preserve IDs)
+    const doctypes = document.querySelectorAll(".doc_type");
+    doctypes.forEach(doctype => {
+      doctype.addEventListener("click", () => {
+        // Toggle active styling
+        doctypes.forEach(d => d.classList.remove('active'));
+        doctype.classList.add('active');
+
+        // Clear previous inputs (user requested behavior kept)
+        emptyInputs();
+
+        // Hide all forms, then show the selected one
+        allFormIds.forEach(formId => {
+          const formElement = document.querySelector("#" + formId);
+          if (formElement) formElement.setAttribute("hidden", "");
+        });
+
+        const doc_id = doctype.getAttribute("id") + "_form";
+        const selectedForm = document.querySelector("#" + doc_id);
+        if (selectedForm) {
+          selectedForm.removeAttribute("hidden");
+          // focus the first input for convenience
+          const firstInput = selectedForm.querySelector("input, textarea");
+          if (firstInput) firstInput.focus();
+        }
+      });
+    });
+
+    // Controls
+    const submitButton = document.querySelector("#submit_form");
+    const clearButton = document.querySelector("#clear_form");
+    const processingOverlay = document.getElementById('processingOverlay');
+    const processingText = document.getElementById('processingText');
+    const processingSub = document.getElementById('processingSub');
+    const viewLink = document.getElementById('view_link');
+    const spinner = document.getElementById('spinner');
+
+    let returnedUrl = "";
+
+    function show(el){ if(!el) return; el.style.display = (el === processingOverlay) ? 'flex' : 'inline-block'; el.classList.remove('hidden'); }
+    function hide(el){ if(!el) return; el.style.display = 'none'; el.classList.add('hidden'); }
+
+    // Clear button: only empties inputs (doesn't change selected doc type)
+    clearButton.addEventListener('click', () => {
+      emptyInputs();
+    });
+
+    // Allow clicking overlay to open result when ready
+    processingOverlay.addEventListener('click', (e) => {
+      if (e.target === viewLink) return;
+      if (returnedUrl) {
+        window.open(returnedUrl, '_blank', 'noopener');
+      } else {
+        const prev = processingText.textContent;
+        processingText.textContent = 'Still processing — please wait…';
+        setTimeout(() => processingText.textContent = prev, 1400);
+      }
+    });
+
+    // Submit handler (kept logic/IDs intact)
+    if (submitButton) {
+      submitButton.addEventListener("click", async (e) => {
+        e.preventDefault();
+
+        const visibleFormId = allFormIds.find(id => {
+          const element = document.querySelector(`#${id}`);
+          return element && !element.hasAttribute("hidden");
+        });
+
+        if (!visibleFormId) {
+          alert("Please select a document type and fill out a form first!");
+          return;
         }
 
-        // 2. Form switching logic (Kept the same as before)
-        const doctypes = document.querySelectorAll(".doc_type");
-        doctypes.forEach(doctype => {
-            doctype.addEventListener("click", () => {
-                
-                emptyInputs();
+        const formElements = document.querySelectorAll(`#${visibleFormId} input, #${visibleFormId} textarea`);
+        let formData = {
+          document_type: visibleFormId.replace('_form', '')
+        };
 
-                allFormIds.forEach(formId => {
-                    const formElement = document.querySelector("#" + formId);
-                    if (formElement) {
-                        formElement.setAttribute("hidden", "");
-                    }
-                });
-
-                let doc_id = doctype.getAttribute("id");
-                doc_id += "_form";
-                
-                const selectedForm = document.querySelector("#" + doc_id);
-                if (selectedForm) {
-                    console.log(`Showing: #${doc_id}`);
-                    selectedForm.removeAttribute("hidden");
-                }
-            });
+        formElements.forEach(input => {
+          if (input.id) formData[input.id] = input.value;
         });
-        
-        // Processing UI elements
-        const submitButton = document.querySelector("#submit_form");
-        const processingOverlay = document.getElementById('processingOverlay');
-        const processingText = document.getElementById('processingText');
-        const processingSub = document.getElementById('processingSub');
-        const viewLink = document.getElementById('view_link');
-        const spinner = document.getElementById('spinner');
 
-        // holds returned url from server once available
-        let returnedUrl = "";
+        console.log("Collected Data:", formData);
 
-        // helper to show/hide elements
-        function show(el){ el.style.display = (el === processingOverlay) ? 'flex' : 'inline-block'; el.classList.remove('hidden'); }
-        function hide(el){ el.style.display = 'none'; el.classList.add('hidden'); }
+        try {
+          // UI loading
+          submitButton.textContent = 'Generating...';
+          submitButton.disabled = true;
+          returnedUrl = "";
+          hide(viewLink);
+          processingText.textContent = 'Processing document…';
+          processingSub.textContent = 'This may take a few seconds.';
+          processingOverlay.classList.add('clickable');
+          show(processingOverlay);
 
-        // clicking the overlay: open url if available, otherwise give brief message
-        processingOverlay.addEventListener('click', (e) => {
-            // If clicked on the view link itself, let the link behave normally
-            if (e.target === viewLink) return;
-            if (returnedUrl) {
-                window.open(returnedUrl, '_blank', 'noopener');
+          const response = await fetch(PDF_GENERATION_ROUTE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+
+          if (response.ok) {
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              const data = await response.json();
+              if (data && (data.response === 'successful' || data.status === 'ok') && data.url) {
+                returnedUrl = data.url;
+                viewLink.setAttribute('href', returnedUrl);
+                viewLink.textContent = 'VIEW DOCS => Open document';
+                show(viewLink);
+                processingText.textContent = 'Document ready — click to open';
+                processingSub.textContent = '';
+                spinner.style.borderColor = 'rgba(34,197,94,0.15)';
+                spinner.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.06)';
+                submitButton.disabled = false;
+              } else {
+                throw new Error('Unexpected JSON response: ' + JSON.stringify(data));
+              }
             } else {
-                const prev = processingText.textContent;
-                processingText.textContent = 'Still processing — please wait…';
-                setTimeout(() => processingText.textContent = prev, 1400);
-            }
-        });
-
-        // 3. Form submission handler for POST request (UPDATED LOGIC)
-        if (submitButton) {
-            submitButton.addEventListener("click", async (e) => {
-                e.preventDefault(); // Stop page reload
-                
-                // Find which form is currently visible
-                const visibleFormId = allFormIds.find(id => {
-                    const element = document.querySelector(`#${id}`);
-                    // Check if the element exists and does NOT have the 'hidden' attribute
-                    return element && !element.hasAttribute("hidden");
-                });
-
-                if (!visibleFormId) {
-                    alert("Please select a document type and fill out a form first!");
-                    return;
-                }
-                
-                // Collect the data from the visible form
-                const formElements = document.querySelectorAll(`#${visibleFormId} input, #${visibleFormId} textarea`);
-                let formData = {
-                    document_type: visibleFormId.replace('_form', ''), // e.g., 'letter', 'memo'
-                };
-                
-                formElements.forEach(input => {
-                    if (input.id) {
-                        formData[input.id] = input.value;
-                    }
-                });
-                
-                console.log("Collected Data:", formData);
-
-                // --- MAKE THE POST REQUEST ---
+              // Fallbacks: response.url or blob
+              const possibleUrl = response.url && response.url !== window.location.href ? response.url : null;
+              if (possibleUrl) {
+                returnedUrl = possibleUrl;
+                viewLink.setAttribute('href', returnedUrl);
+                viewLink.textContent = 'VIEW DOCS => Open document';
+                show(viewLink);
+                processingText.textContent = 'Document ready — click to open';
+                processingSub.textContent = '';
+                submitButton.disabled = false;
+              } else {
                 try {
-                    // Start UI loading state
-                    submitButton.textContent = 'Generating PDF...';
-                    submitButton.disabled = true;
-                    returnedUrl = "";
-                    hide(viewLink);
-                    processingText.textContent = 'Processing document…';
-                    processingSub.textContent = 'This may take a few seconds.';
-                    processingOverlay.classList.add('clickable');
-                    show(processingOverlay);
-
-                    const response = await fetch(PDF_GENERATION_ROUTE, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData),
-                    });
-
-                    // Try to parse JSON response (expected {"response":"successful","url":"..."}).
-                    // Some backends may return a file blob; we handle JSON first.
-                    if (response.ok) {
-                        const contentType = response.headers.get('content-type') || '';
-                        if (contentType.includes('application/json')) {
-                            const data = await response.json();
-                            console.log('Server JSON response:', data);
-                            if (data && (data.response === 'successful' || data.status === 'ok') && data.url) {
-                                returnedUrl = data.url;
-                                viewLink.setAttribute('href', returnedUrl);
-                                viewLink.textContent = 'VIEW DOCS => Open document';
-                                show(viewLink);
-                                processingText.textContent = 'Document ready — click to open';
-                                processingSub.textContent = '';
-                                // style spinner to indicate success
-                                spinner.style.borderColor = 'rgba(34,197,94,0.15)';
-                                spinner.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.06)';
-                                // optionally re-enable submit for another run
-                                submitButton.disabled = false;
-                            } else {
-                                // Unexpected JSON payload
-                                throw new Error('Unexpected JSON response: ' + JSON.stringify(data));
-                            }
-                        } else {
-                            // Not JSON — maybe the server returned a redirect link in response.url or a blob
-                            // If response.url points to the generated doc, use that
-                            const possibleUrl = response.url && response.url !== window.location.href ? response.url : null;
-                            if (possibleUrl) {
-                                returnedUrl = possibleUrl;
-                                viewLink.setAttribute('href', returnedUrl);
-                                viewLink.textContent = 'VIEW DOCS => Open document';
-                                show(viewLink);
-                                processingText.textContent = 'Document ready — click to open';
-                                processingSub.textContent = '';
-                                submitButton.disabled = false;
-                            } else {
-                                // Attempt to treat as blob and trigger download (fallback)
-                                try {
-                                    const blob = await response.blob();
-                                    const url = window.URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${formData.document_type}_document.pdf`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    a.remove();
-                                    window.URL.revokeObjectURL(url);
-                                    processingText.textContent = 'PDF downloaded';
-                                    processingSub.textContent = '';
-                                } catch (blobErr) {
-                                    throw new Error('Unknown response from server and failed to download blob.');
-                                } finally {
-                                    submitButton.disabled = false;
-                                }
-                            }
-                        }
-                    } else {
-                        const errorText = await response.text();
-                        console.error("Server error:", response.status, errorText);
-                        throw new Error(`Error generating PDF: ${response.status} - ${errorText}`);
-                    }
-
-                } catch (error) {
-                    console.error("Fetch error:", error);
-                    alert("A network or server error occurred while trying to contact the server.\n" + (error.message || error));
-                    processingText.textContent = 'Processing failed';
-                    processingSub.textContent = '';
-                    processingOverlay.classList.remove('clickable');
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${formData.document_type}_document.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                  processingText.textContent = 'PDF downloaded';
+                  processingSub.textContent = '';
+                } catch (blobErr) {
+                  throw new Error('Unknown response from server and failed to download blob.');
                 } finally {
-                    // If we don't have a returnedUrl, hide overlay after a short delay (so user sees result)
-                    if (!returnedUrl) {
-                        setTimeout(() => {
-                            hide(processingOverlay);
-                        }, 900);
-                    } else {
-                        // keep overlay visible so users can click it; viewLink is also shown
-                        processingOverlay.style.display = 'flex';
-                    }
-                    submitButton.textContent = 'Submit for PDF Generation';
-                    submitButton.disabled = false;
+                  submitButton.disabled = false;
                 }
-            });
+              }
+            }
+          } else {
+            const errorText = await response.text();
+            console.error("Server error:", response.status, errorText);
+            throw new Error(`Error generating PDF: ${response.status} - ${errorText}`);
+          }
+        } catch (error) {
+          console.error("Fetch error:", error);
+          alert("A network or server error occurred while trying to contact the server.\n" + (error.message || error));
+          processingText.textContent = 'Processing failed';
+          processingSub.textContent = '';
+          processingOverlay.classList.remove('clickable');
+        } finally {
+          if (!returnedUrl) {
+            setTimeout(() => hide(processingOverlay), 900);
+          } else {
+            processingOverlay.style.display = 'flex';
+          }
+          submitButton.textContent = 'Submit for PDF Generation';
+          submitButton.disabled = false;
         }
-    </script>
+      });
+    }
+  </script>
 </body>
 </html>
