@@ -71,8 +71,7 @@
 <body>
     <div class="logo">
             !!! <span class="V">V</span><span class="L">L</span><span class="X">X</span> excel maker !!!
-    </div>
-
+        </div>
     <div>
         <h3>Select a document type</h3>
         <ul>
@@ -97,9 +96,11 @@
             <li id="certificate" class="doc_type">
                 Cerificate
             </li>
+            <li id="list" class="doc_type">
+                List
+            </li>
         </ul>
     </div>
-
     <div id="letter_form" hidden>
         <h3>Letter form</h3>
         <form>
@@ -176,6 +177,15 @@
         </form>
     </div>
 
+    <!-- NEW: List document type -->
+    <div id="list_form" hidden>
+        <h3>List form</h3>
+        <form>
+            <div><label for="list_prompt">Prompt</label><input id="list_prompt" placeholder="Describe the list or formatting instructions"></div>
+            <div><label for="list_data">Data (one item per line or CSV)</label><textarea id="list_data" rows="8" placeholder="Paste your raw data here..."></textarea></div>
+        </form>
+    </div>
+
     <button type="submit" id="submit_form" >Submit for PDF Generation</button>
 
     <!-- Processing overlay and result link -->
@@ -192,7 +202,7 @@
         // Set the route for the POST request
         const PDF_GENERATION_ROUTE = 'https://vlx-excel.onrender.com/doc_maker';
 
-        // Array of all form IDs to easily hide them
+        // Array of all form IDs to easily hide them — added list_form
         const allFormIds = [
             "letter_form",
             "memo_form",
@@ -200,7 +210,8 @@
             "receipt_form",
             "report_form",
             "proposal_form",
-            "certificate_form"
+            "certificate_form",
+            "list_form"
         ];
 
         // 1. Input emptying function
