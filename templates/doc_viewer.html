@@ -16,7 +16,7 @@
     a.ghost { background: transparent; color: var(--muted); border: 1px solid rgba(15,23,42,0.06); }
     .layout { display:flex; gap:16px; margin-top:14px; }
     .sidebar { width:300px; min-width:220px; max-height:72vh; overflow:auto; border-radius:8px; padding:12px; background:#fff; border:1px solid rgba(15,23,42,0.04)}
-    .item { padding:10px; border-radius:6px; margin-bottom:8px; cursor:pointer; border:1px solid rgba(15,23,42,0.04) }
+    .item { padding:10px; border-radius:6px; margin-bottom:8px; cursor:pointer; border:1px solid rgba(15,23,42,0.04); user-select:none; }
     .item.active { box-shadow:0 1px 0 rgba(15,23,42,0.03); border-color:rgba(43,108,176,0.12); background:#f8fafc }
     .viewer { flex:1; border-radius:8px; overflow:hidden; background:#fff; border:1px solid rgba(15,23,42,0.04) }
     iframe.pdf { width:100%; height:72vh; border:0; display:block; }
@@ -25,7 +25,8 @@
     .empty { padding:24px; text-align:center; color:var(--muted) }
     .actions { display:flex; gap:8px; align-items:center; margin-bottom:10px }
     .badge { font-size:.8rem; padding:4px 8px; border-radius:999px; background:#eef2ff; color:var(--accent) }
-    pre.debug { white-space:pre-wrap; max-height:200px; overflow:auto; background:#0f172a; color:#fff; padding:12px; border-radius:6px; }
+    /* Keep script templates hidden and non-rendering */
+    script[type="text/template"] { display:none; }
   </style>
 </head>
 <body>
@@ -46,14 +47,17 @@
       <aside class="sidebar" id="sidebar">
         {% if templates and templates|length > 0 %}
           {% for t in templates %}
-            <div class="item" data-index="{{ loop.index0 }}" data-subkey="{{ t.subkey }}" data-key="{{ t.key }}">
+            <div class="item" data-index="{{ loop.index0 }}" data-subkey="{{ t.subkey }}" data-key="{{ t.key }}" title="Click to preview">
               <div><strong>Template #{{ loop.index }}</strong> <span class="badge">sub: {{ t.subkey }}</span></div>
-              <div class="small" style="margin-top:6px; max-height:44px; overflow:hidden; color:#334155;">
-                {{ (t.template[:240] ~ '...') if (t.template|length > 240) else t.template }}
+              <div class="small" style="margin-top:6px; color:#334155;">
+                <!-- Deliberately do not show raw HTML content here.
+                     Keep only minimal, safe metadata in the sidebar. -->
+                {{ t.key }} — preview available
               </div>
             </div>
 
-            {# Embed raw template HTML inside a script template so JS can read it safely (escaped) #}
+            {# Keep raw template HTML inside a hidden script tag (escaped) so JS can read it,
+               but do NOT render any snippet in the sidebar. #}
             <script type="text/template" id="tpl-{{ loop.index0 }}">{{ t.template | replace('```', '') | e }}</script>
           {% endfor %}
         {% else %}
@@ -63,8 +67,8 @@
 
       <section class="viewer" id="viewerWrap" aria-live="polite">
         {% if templates and templates|length > 0 %}
-          {# We'll render the first template immediately. Use srcdoc (set via JS) #}
-          <iframe class="pdf" id="pdfFrame"></iframe>
+          {# Render the selected template inside an iframe (srcdoc or blob) #}
+          <iframe class="pdf" id="pdfFrame" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
         {% else %}
           <div class="empty">No document to preview.</div>
         {% endif %}
@@ -72,50 +76,44 @@
     </div>
 
     <div class="meta" id="msg" style="margin-top:12px"></div>
-
-    {# Helpful debug panel to inspect what was passed from the server. Remove in production. #}
-    <details style="margin-top:12px">
-      <summary class="small">Debug: raw templates payload</summary>
-      <pre class="debug" id="debugPre">{{ templates | pprint }}</pre>
-    </details>
   </main>
 
   <script>
     (function(){
-      // Grab elements
+      // DOM refs
       const sidebar = document.getElementById('sidebar');
       const pdfFrame = document.getElementById('pdfFrame');
       const openBtn = document.getElementById('openBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       const msg = document.getElementById('msg');
 
-      // Read templates count from the DOM (script templates)
+      // Gather templates from the hidden <script type="text/template"> tags
       const scriptTemplates = document.querySelectorAll('script[type="text/template"]');
       if (!scriptTemplates || scriptTemplates.length === 0) {
         msg.textContent = 'No templates available to preview.';
         return;
       }
 
-      // Convert NodeList to array; build a lightweight templates array
       const templates = Array.from(scriptTemplates).map((s, idx) => {
+        // s.innerHTML contains escaped HTML (Jinja |e), decode safely below
+        const prev = s.previousElementSibling;
         return {
-          template: s.innerHTML || '',
+          templateRaw: s.innerHTML || '',
           index: idx,
-          key: s.previousElementSibling ? s.previousElementSibling.getAttribute('data-key') : '',
-          subkey: s.previousElementSibling ? s.previousElementSibling.getAttribute('data-subkey') : idx
+          key: prev ? prev.getAttribute('data-key') : '',
+          subkey: prev ? prev.getAttribute('data-subkey') : idx
         };
       });
 
-      // Utility: unescape HTML entities produced by Jinja |e
+      // decode HTML entities that Jinja escaped (safe)
       function htmlDecode(input) {
-        // create a temporary element to decode HTML entities
         const txt = document.createElement('textarea');
         txt.innerHTML = input;
         return txt.value;
       }
 
       templates.forEach(t => {
-        t.template = htmlDecode(t.template);
+        t.template = htmlDecode(t.templateRaw || '');
       });
 
       let currentIndex = 0;
@@ -126,12 +124,11 @@
         currentIndex = index;
 
         try {
-          // Use srcdoc where available
+          // Use srcdoc where available for direct HTML preview
           if ('srcdoc' in pdfFrame) {
-            // assign directly
             pdfFrame.srcdoc = t.template;
           } else {
-            // fallback: blob url
+            // fallback to blob URL
             if (pdfFrame._currentBlob) {
               URL.revokeObjectURL(pdfFrame._currentBlob);
               pdfFrame._currentBlob = null;
@@ -153,14 +150,14 @@
           msg.textContent = 'Failed to render template preview: ' + (err.message || err);
         }
 
-        // Mark active item in sidebar
+        // highlight active item
         const items = sidebar.querySelectorAll('.item');
         items.forEach(it => it.classList.remove('active'));
         const active = sidebar.querySelector('.item[data-index="'+index+'"]');
         if (active) active.classList.add('active');
       }
 
-      // Sidebar click handling
+      // click handling
       sidebar.addEventListener('click', (e) => {
         const item = e.target.closest('.item');
         if (!item) return;
@@ -170,7 +167,7 @@
         }
       });
 
-      // Open in new tab: create blob and open
+      // open in new tab
       openBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const t = templates[currentIndex];
@@ -181,10 +178,10 @@
         setTimeout(() => URL.revokeObjectURL(url), 2000);
       });
 
-      // Initial render
+      // initial render
       renderTemplateAt(0);
 
-      // Keyboard navigation
+      // keyboard navigation
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown' || e.key === 'j') {
           const next = Math.min(templates.length - 1, currentIndex + 1);
