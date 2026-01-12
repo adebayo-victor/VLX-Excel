@@ -6,12 +6,7 @@
   <title>View Document</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='pdf_maker.css') }}">
   <style>
-    :root{
-      --accent:#2b6cb0;
-      --bg:#fff;
-      --muted:#6b7280;
-      --success:#16a34a;
-    }
+    :root{ --accent:#2b6cb0; --muted:#6b7280; --bg:#fff }
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:20px;background:#f7fafc;color:#0f172a}
     .card{background:var(--bg);border-radius:8px;padding:18px;max-width:1100px;margin:0 auto;box-shadow:0 1px 3px rgba(15,23,42,0.06)}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -20,7 +15,7 @@
     a.btn, button {background:var(--accent);color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none;border:none;cursor:pointer}
     a.ghost { background: transparent; color: var(--muted); border: 1px solid rgba(15,23,42,0.06); }
     .layout { display:flex; gap:16px; margin-top:14px; }
-    .sidebar { width:280px; min-width:220px; max-height:72vh; overflow:auto; border-radius:8px; padding:12px; background:#fff; border:1px solid rgba(15,23,42,0.04)}
+    .sidebar { width:300px; min-width:220px; max-height:72vh; overflow:auto; border-radius:8px; padding:12px; background:#fff; border:1px solid rgba(15,23,42,0.04)}
     .item { padding:10px; border-radius:6px; margin-bottom:8px; cursor:pointer; border:1px solid rgba(15,23,42,0.04) }
     .item.active { box-shadow:0 1px 0 rgba(15,23,42,0.03); border-color:rgba(43,108,176,0.12); background:#f8fafc }
     .viewer { flex:1; border-radius:8px; overflow:hidden; background:#fff; border:1px solid rgba(15,23,42,0.04) }
@@ -30,6 +25,7 @@
     .empty { padding:24px; text-align:center; color:var(--muted) }
     .actions { display:flex; gap:8px; align-items:center; margin-bottom:10px }
     .badge { font-size:.8rem; padding:4px 8px; border-radius:999px; background:#eef2ff; color:var(--accent) }
+    pre.debug { white-space:pre-wrap; max-height:200px; overflow:auto; background:#0f172a; color:#fff; padding:12px; border-radius:6px; }
   </style>
 </head>
 <body>
@@ -37,7 +33,7 @@
     <header>
       <div>
         <div class="title">Document Viewer</div>
-        <div class="meta">View, open, or download generated templates for key: <strong>{{ templates[0].key if (templates and templates|length > 0) else 'N/A' }}</strong></div>
+        <div class="meta">Templates for key: <strong>{{ templates[0].key if (templates and templates|length > 0) else 'N/A' }}</strong></div>
       </div>
       <div class="controls">
         <a class="btn ghost" href="{{ url_for('index') }}">Back</a>
@@ -56,6 +52,9 @@
                 {{ (t.template[:240] ~ '...') if (t.template|length > 240) else t.template }}
               </div>
             </div>
+
+            {# Embed raw template HTML inside a script template so JS can read it safely (escaped) #}
+            <script type="text/template" id="tpl-{{ loop.index0 }}">{{ t.template | replace('```', '') | e }}</script>
           {% endfor %}
         {% else %}
           <div class="empty">No templates found for this key.</div>
@@ -64,8 +63,8 @@
 
       <section class="viewer" id="viewerWrap" aria-live="polite">
         {% if templates and templates|length > 0 %}
-          {# We'll render the first template immediately using srcdoc for safe embedding. JS will manage switching #}
-          <iframe class="pdf" id="pdfFrame" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+          {# We'll render the first template immediately. Use srcdoc (set via JS) #}
+          <iframe class="pdf" id="pdfFrame"></iframe>
         {% else %}
           <div class="empty">No document to preview.</div>
         {% endif %}
@@ -73,33 +72,50 @@
     </div>
 
     <div class="meta" id="msg" style="margin-top:12px"></div>
+
+    {# Helpful debug panel to inspect what was passed from the server. Remove in production. #}
+    <details style="margin-top:12px">
+      <summary class="small">Debug: raw templates payload</summary>
+      <pre class="debug" id="debugPre">{{ templates | pprint }}</pre>
+    </details>
   </main>
 
   <script>
     (function(){
-      // Acquire templates from server-rendered context (safe via tojson)
-      const templates = {{ templates|tojson }};
+      // Grab elements
       const sidebar = document.getElementById('sidebar');
       const pdfFrame = document.getElementById('pdfFrame');
       const openBtn = document.getElementById('openBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       const msg = document.getElementById('msg');
 
-      if (!templates || templates.length === 0) {
-        // nothing to do
+      // Read templates count from the DOM (script templates)
+      const scriptTemplates = document.querySelectorAll('script[type="text/template"]');
+      if (!scriptTemplates || scriptTemplates.length === 0) {
+        msg.textContent = 'No templates available to preview.';
         return;
       }
 
-      // Normalize template content (strip triple backticks that the backend may have inserted)
+      // Convert NodeList to array; build a lightweight templates array
+      const templates = Array.from(scriptTemplates).map((s, idx) => {
+        return {
+          template: s.innerHTML || '',
+          index: idx,
+          key: s.previousElementSibling ? s.previousElementSibling.getAttribute('data-key') : '',
+          subkey: s.previousElementSibling ? s.previousElementSibling.getAttribute('data-subkey') : idx
+        };
+      });
+
+      // Utility: unescape HTML entities produced by Jinja |e
+      function htmlDecode(input) {
+        // create a temporary element to decode HTML entities
+        const txt = document.createElement('textarea');
+        txt.innerHTML = input;
+        return txt.value;
+      }
+
       templates.forEach(t => {
-        if (typeof t.template === 'string') {
-          t.template = t.template.replace(/```/g, '');
-        } else {
-          t.template = String(t.template || '');
-        }
-        // Ensure subkey and key exist for download route
-        t.subkey = (typeof t.subkey !== 'undefined') ? t.subkey : 0;
-        t.key = t.key || (templates.length && templates[0].key) || '';
+        t.template = htmlDecode(t.template);
       });
 
       let currentIndex = 0;
@@ -109,35 +125,32 @@
         if (!t) return;
         currentIndex = index;
 
-        // Use srcdoc to embed the HTML string - cleaner than injecting innerHTML.
         try {
-          // Some browsers limit srcdoc length; as fallback, create blob URL
-          const html = t.template;
-          const supportsSrcdoc = 'srcdoc' in document.createElement('iframe');
-          if (supportsSrcdoc) {
-            pdfFrame.srcdoc = html;
+          // Use srcdoc where available
+          if ('srcdoc' in pdfFrame) {
+            // assign directly
+            pdfFrame.srcdoc = t.template;
           } else {
-            // Fallback: create blob URL
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            pdfFrame.src = url;
-            // revoke old blob later (keep reference)
+            // fallback: blob url
             if (pdfFrame._currentBlob) {
               URL.revokeObjectURL(pdfFrame._currentBlob);
+              pdfFrame._currentBlob = null;
             }
+            const blob = new Blob([t.template], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            pdfFrame.src = url;
             pdfFrame._currentBlob = url;
           }
 
           // Update controls
-          openBtn.href = '#';
           openBtn.classList.remove('hidden');
-          downloadBtn.href = `/download_doc/${encodeURIComponent(t.key)}/${encodeURIComponent(t.subkey)}`;
           downloadBtn.classList.remove('hidden');
-
-          msg.textContent = `Showing template ${index + 1} (subkey: ${t.subkey}) — Created under key ${t.key}`;
+          openBtn.href = '#';
+          downloadBtn.href = `/download_doc/${encodeURIComponent(t.key)}/${encodeURIComponent(t.subkey)}`;
+          msg.textContent = `Showing template ${index + 1} (subkey: ${t.subkey}) — Key: ${t.key}`;
         } catch (err) {
           console.error('Error rendering template', err);
-          msg.textContent = 'Failed to render template preview.';
+          msg.textContent = 'Failed to render template preview: ' + (err.message || err);
         }
 
         // Mark active item in sidebar
@@ -157,7 +170,7 @@
         }
       });
 
-      // Open in new tab: create a blob of the current HTML and open in new window
+      // Open in new tab: create blob and open
       openBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const t = templates[currentIndex];
@@ -165,14 +178,13 @@
         const blob = new Blob([t.template], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank', 'noopener');
-        // Revoke after a short delay to allow the new tab to load
         setTimeout(() => URL.revokeObjectURL(url), 2000);
       });
 
-      // Setup initial render (first template)
+      // Initial render
       renderTemplateAt(0);
 
-      // Accessibility: allow arrow keys to navigate templates
+      // Keyboard navigation
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown' || e.key === 'j') {
           const next = Math.min(templates.length - 1, currentIndex + 1);
@@ -181,7 +193,6 @@
           const prev = Math.max(0, currentIndex - 1);
           renderTemplateAt(prev);
         } else if ((e.key === 'o' || e.key === 'O') && templates[currentIndex]) {
-          // open
           const t = templates[currentIndex];
           const blob = new Blob([t.template], { type: 'text/html' });
           const url = URL.createObjectURL(blob);
