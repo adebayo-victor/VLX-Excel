@@ -32,6 +32,7 @@
     .hidden{display:none}
     .success-ring { box-shadow:0 0 0 6px rgba(34,197,94,0.04); border-color: rgba(34,197,94,0.14) !important; }
     .meta{font-size:.95rem;color:var(--muted);margin-top:8px}
+    .logo { margin-bottom: 10px; font-weight:700; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -43,18 +44,18 @@
       </div>
 
       <div class="controls">
-        <a class="btn ghost" href="{{ url_for('index') if (url_for is defined) else '/' }}">Back</a>
+        <a class="btn ghost" href="{{ url_for('index') }}">Back</a>
         <a id="openBtn" class="btn hidden" href="#" target="_blank" rel="noopener">Open in new tab</a>
         <a id="downloadBtn" class="btn hidden" href="#" download>Download</a>
       </div>
     </header>
 
     <section class="viewer-wrap" id="viewerWrap" aria-live="polite">
-      <!-- If the server rendered a direct URL, we embed it immediately -->
+      {# If the server rendered a direct URL, embed it immediately #}
       {% if doc_url %}
         <iframe class="pdf" id="pdfFrame" src="{{ doc_url }}"></iframe>
       {% else %}
-        <!-- Processing placeholder; will poll for URL -->
+        <!-- Processing placeholder; client JS will poll for URL when doc_id is provided -->
         <div id="processing" class="center" style="padding:22px;">
           <div class="spinner" id="spinner" aria-hidden="true"></div>
           <div>
@@ -70,12 +71,11 @@
 
   <script>
     (function(){
-      // Configuration
-      const docUrlFromServer = {{ ("'" + doc_url + "'") if (doc_url is defined and doc_url) else "null" }};
-      const docId = {{ ("'" + doc_id + "'") if (doc_id is defined and doc_id) else "null" }};
-      // Endpoint used to ask the backend for the document URL when doc_url isn't provided.
-      // Adjust this to your real API on the server. Expected JSON: {"response":"successful","url":"https://..."}
-      const STATUS_ENDPOINT_TEMPLATE = '/api/doc_status/'; // we'll append docId
+      // Jinja-populated values (safe via tojson)
+      const docUrlFromServer = {{ doc_url|tojson if (doc_url is defined) else 'null' }};
+      const docId = {{ doc_id|tojson if (doc_id is defined) else 'null' }};
+      // Server can pass a status endpoint prefix (e.g. "/api/doc_status/"), otherwise use default
+      const STATUS_ENDPOINT_PREFIX = {{ status_endpoint_prefix|default('/api/doc_status/')|tojson }};
 
       // Elements
       const openBtn = document.getElementById('openBtn');
@@ -92,8 +92,8 @@
       const POLL_INTERVAL = 2000; // ms
       const MAX_ATTEMPTS = 60; // stop after ~2 minutes
 
-      function show(el){ el.classList.remove('hidden'); el.style.display = (el === processing) ? 'flex' : 'inline-block'; }
-      function hide(el){ el.classList.add('hidden'); el.style.display = 'none'; }
+      function show(el){ el && el.classList.remove('hidden'); if (el) el.style.display = (el === processing) ? 'flex' : 'inline-block'; }
+      function hide(el){ el && el.classList.add('hidden'); if (el) el.style.display = 'none'; }
 
       function setSuccessUI(url) {
         returnedUrl = url;
@@ -126,9 +126,9 @@
 
       function setErrorUI(text) {
         msg.textContent = text;
-        processingText.textContent = 'Failed to load document';
-        processingSub.textContent = '';
-        spinner.style.opacity = '0.6';
+        if (processingText) processingText.textContent = 'Failed to load document';
+        if (processingSub) processingSub.textContent = '';
+        if (spinner) spinner.style.opacity = '0.6';
       }
 
       // If we received URL in template, initialize immediately
@@ -137,13 +137,13 @@
       } else if (docId) {
         // Start polling for the document URL
         let attempts = 0;
-        processingText.textContent = 'Processing document…';
-        processingSub.textContent = 'Checking for available document...';
+        if (processingText) processingText.textContent = 'Processing document…';
+        if (processingSub) processingSub.textContent = 'Checking for available document...';
 
         pollHandle = setInterval(async () => {
           attempts++;
           try {
-            const endpoint = STATUS_ENDPOINT_TEMPLATE + encodeURIComponent(docId);
+            const endpoint = STATUS_ENDPOINT_PREFIX + encodeURIComponent(docId);
             const resp = await fetch(endpoint, { method: 'GET', headers: { 'Accept': 'application/json' }});
             if (!resp.ok) {
               // If 404 keep polling (document not yet ready). For other errors show message.
@@ -175,12 +175,12 @@
         }, POLL_INTERVAL);
       } else {
         // Nothing to do: no doc_id or doc_url
-        processingText.textContent = 'No document specified';
-        processingSub.textContent = '';
+        if (processingText) processingText.textContent = 'No document specified';
+        if (processingSub) processingSub.textContent = '';
         msg.textContent = 'This view expects either a doc_url or a doc_id to poll for the generated file.';
       }
 
-      // clicking the processing area opens the url if available
+      // clicking the viewer area opens the url if available
       viewerWrap.addEventListener('click', (e) => {
         if (returnedUrl) window.open(returnedUrl, '_blank', 'noopener');
       });
