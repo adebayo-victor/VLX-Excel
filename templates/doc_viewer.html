@@ -13,26 +13,23 @@
       --success:#16a34a;
     }
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:20px;background:#f7fafc;color:#0f172a}
-    .card{background:var(--bg);border-radius:8px;padding:18px;max-width:980px;margin:0 auto;box-shadow:0 1px 3px rgba(15,23,42,0.06)}
+    .card{background:var(--bg);border-radius:8px;padding:18px;max-width:1100px;margin:0 auto;box-shadow:0 1px 3px rgba(15,23,42,0.06)}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .title{font-weight:700}
     .controls{display:flex;gap:8px;align-items:center}
     a.btn, button {background:var(--accent);color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none;border:none;cursor:pointer}
     a.ghost { background: transparent; color: var(--muted); border: 1px solid rgba(15,23,42,0.06); }
-    .viewer-wrap{margin-top:14px;min-height:380px;border-radius:8px;overflow:hidden;border:1px solid rgba(15,23,42,0.04);background:#fff}
-    iframe.pdf {width:100%;height:720px;border:0;display:block}
-
-    /* processing / spinner */
-    .center {display:flex;align-items:center;gap:12px}
-    .spinner{width:44px;height:44px;border-radius:50%;border:4px solid rgba(59,130,246,0.14);position:relative;flex:0 0 auto}
-    .spinner::after{content:"";position:absolute;inset:4px;border-radius:50%;border:4px solid transparent;border-top-color:var(--accent);animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .status-text{font-weight:600}
-    .small{font-size:.9rem;color:var(--muted)}
-    .hidden{display:none}
-    .success-ring { box-shadow:0 0 0 6px rgba(34,197,94,0.04); border-color: rgba(34,197,94,0.14) !important; }
-    .meta{font-size:.95rem;color:var(--muted);margin-top:8px}
-    .logo { margin-bottom: 10px; font-weight:700; color: var(--muted); }
+    .layout { display:flex; gap:16px; margin-top:14px; }
+    .sidebar { width:280px; min-width:220px; max-height:72vh; overflow:auto; border-radius:8px; padding:12px; background:#fff; border:1px solid rgba(15,23,42,0.04)}
+    .item { padding:10px; border-radius:6px; margin-bottom:8px; cursor:pointer; border:1px solid rgba(15,23,42,0.04) }
+    .item.active { box-shadow:0 1px 0 rgba(15,23,42,0.03); border-color:rgba(43,108,176,0.12); background:#f8fafc }
+    .viewer { flex:1; border-radius:8px; overflow:hidden; background:#fff; border:1px solid rgba(15,23,42,0.04) }
+    iframe.pdf { width:100%; height:72vh; border:0; display:block; }
+    .meta { font-size:.95rem; color:var(--muted); margin-top:8px }
+    .small{ font-size:.9rem; color:#6b7280 }
+    .empty { padding:24px; text-align:center; color:var(--muted) }
+    .actions { display:flex; gap:8px; align-items:center; margin-bottom:10px }
+    .badge { font-size:.8rem; padding:4px 8px; border-radius:999px; background:#eef2ff; color:var(--accent) }
   </style>
 </head>
 <body>
@@ -40,163 +37,158 @@
     <header>
       <div>
         <div class="title">Document Viewer</div>
-        <div class="meta" id="docMeta">ID: {{ doc_id or 'unknown' }}</div>
+        <div class="meta">View, open, or download generated templates for key: <strong>{{ templates[0].key if (templates and templates|length > 0) else 'N/A' }}</strong></div>
       </div>
-
       <div class="controls">
         <a class="btn ghost" href="{{ url_for('index') }}">Back</a>
         <a id="openBtn" class="btn hidden" href="#" target="_blank" rel="noopener">Open in new tab</a>
-        <a id="downloadBtn" class="btn hidden" href="#" download>Download</a>
+        <a id="downloadBtn" class="btn hidden" href="#" download>Download PDF</a>
       </div>
     </header>
 
-    <section class="viewer-wrap" id="viewerWrap" aria-live="polite">
-      {# If the server rendered a direct URL, embed it immediately #}
-      {% if doc_url %}
-        <iframe class="pdf" id="pdfFrame" src="{{ doc_url }}"></iframe>
-      {% else %}
-        <!-- Processing placeholder; client JS will poll for URL when doc_id is provided -->
-        <div id="processing" class="center" style="padding:22px;">
-          <div class="spinner" id="spinner" aria-hidden="true"></div>
-          <div>
-            <div class="status-text" id="processingText">Waiting for document…</div>
-            <div class="small" id="processingSub">We'll check every 2 seconds until the document becomes available.</div>
-          </div>
-        </div>
-      {% endif %}
-    </section>
+    <div class="layout">
+      <aside class="sidebar" id="sidebar">
+        {% if templates and templates|length > 0 %}
+          {% for t in templates %}
+            <div class="item" data-index="{{ loop.index0 }}" data-subkey="{{ t.subkey }}" data-key="{{ t.key }}">
+              <div><strong>Template #{{ loop.index }}</strong> <span class="badge">sub: {{ t.subkey }}</span></div>
+              <div class="small" style="margin-top:6px; max-height:44px; overflow:hidden; color:#334155;">
+                {{ (t.template[:240] ~ '...') if (t.template|length > 240) else t.template }}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">No templates found for this key.</div>
+        {% endif %}
+      </aside>
 
-    <div id="msg" class="meta"></div>
+      <section class="viewer" id="viewerWrap" aria-live="polite">
+        {% if templates and templates|length > 0 %}
+          {# We'll render the first template immediately using srcdoc for safe embedding. JS will manage switching #}
+          <iframe class="pdf" id="pdfFrame" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+        {% else %}
+          <div class="empty">No document to preview.</div>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="meta" id="msg" style="margin-top:12px"></div>
   </main>
 
   <script>
     (function(){
-      // Jinja-populated values (safe via tojson)
-      const docUrlFromServer = {{ doc_url|tojson if (doc_url is defined) else 'null' }};
-      const docId = {{ doc_id|tojson if (doc_id is defined) else 'null' }};
-      // Server can pass a status endpoint prefix (e.g. "/api/doc_status/"), otherwise use default
-      const STATUS_ENDPOINT_PREFIX = {{ status_endpoint_prefix|default('/api/doc_status/')|tojson }};
-
-      // Elements
+      // Acquire templates from server-rendered context (safe via tojson)
+      const templates = {{ templates|tojson }};
+      const sidebar = document.getElementById('sidebar');
+      const pdfFrame = document.getElementById('pdfFrame');
       const openBtn = document.getElementById('openBtn');
       const downloadBtn = document.getElementById('downloadBtn');
-      const processing = document.getElementById('processing');
-      const processingText = document.getElementById('processingText');
-      const processingSub = document.getElementById('processingSub');
-      const spinner = document.getElementById('spinner');
-      const viewerWrap = document.getElementById('viewerWrap');
       const msg = document.getElementById('msg');
 
-      let returnedUrl = null;
-      let pollHandle = null;
-      const POLL_INTERVAL = 2000; // ms
-      const MAX_ATTEMPTS = 60; // stop after ~2 minutes
+      if (!templates || templates.length === 0) {
+        // nothing to do
+        return;
+      }
 
-      function show(el){ el && el.classList.remove('hidden'); if (el) el.style.display = (el === processing) ? 'flex' : 'inline-block'; }
-      function hide(el){ el && el.classList.add('hidden'); if (el) el.style.display = 'none'; }
-
-      function setSuccessUI(url) {
-        returnedUrl = url;
-        // show buttons
-        openBtn.href = url;
-        downloadBtn.href = url;
-        openBtn.classList.remove('hidden');
-        downloadBtn.classList.remove('hidden');
-
-        // add iframe if not already present
-        if (!document.getElementById('pdfFrame')) {
-          const iframe = document.createElement('iframe');
-          iframe.id = 'pdfFrame';
-          iframe.className = 'pdf';
-          iframe.src = url;
-          // replace the processing block with the iframe
-          viewerWrap.innerHTML = '';
-          viewerWrap.appendChild(iframe);
+      // Normalize template content (strip triple backticks that the backend may have inserted)
+      templates.forEach(t => {
+        if (typeof t.template === 'string') {
+          t.template = t.template.replace(/```/g, '');
         } else {
-          // update src if iframe exists
-          document.getElementById('pdfFrame').src = url;
+          t.template = String(t.template || '');
         }
+        // Ensure subkey and key exist for download route
+        t.subkey = (typeof t.subkey !== 'undefined') ? t.subkey : 0;
+        t.key = t.key || (templates.length && templates[0].key) || '';
+      });
 
-        // spinner -> success look
-        spinner.classList.add('success-ring');
-        processingText.textContent = 'Document ready — click to open';
-        processingSub.textContent = '';
-        msg.textContent = '';
-      }
+      let currentIndex = 0;
 
-      function setErrorUI(text) {
-        msg.textContent = text;
-        if (processingText) processingText.textContent = 'Failed to load document';
-        if (processingSub) processingSub.textContent = '';
-        if (spinner) spinner.style.opacity = '0.6';
-      }
+      function renderTemplateAt(index) {
+        const t = templates[index];
+        if (!t) return;
+        currentIndex = index;
 
-      // If we received URL in template, initialize immediately
-      if (docUrlFromServer) {
-        setSuccessUI(docUrlFromServer);
-      } else if (docId) {
-        // Start polling for the document URL
-        let attempts = 0;
-        if (processingText) processingText.textContent = 'Processing document…';
-        if (processingSub) processingSub.textContent = 'Checking for available document...';
-
-        pollHandle = setInterval(async () => {
-          attempts++;
-          try {
-            const endpoint = STATUS_ENDPOINT_PREFIX + encodeURIComponent(docId);
-            const resp = await fetch(endpoint, { method: 'GET', headers: { 'Accept': 'application/json' }});
-            if (!resp.ok) {
-              // If 404 keep polling (document not yet ready). For other errors show message.
-              if (resp.status !== 404) {
-                const txt = await resp.text();
-                throw new Error(`Server returned ${resp.status}: ${txt}`);
-              }
-            } else {
-              const data = await resp.json();
-              // Expected: {"response":"successful","url":"https://..."}
-              if (data && (data.response === 'successful' || data.status === 'ok') && data.url) {
-                clearInterval(pollHandle);
-                setSuccessUI(data.url);
-                return;
-              }
+        // Use srcdoc to embed the HTML string - cleaner than injecting innerHTML.
+        try {
+          // Some browsers limit srcdoc length; as fallback, create blob URL
+          const html = t.template;
+          const supportsSrcdoc = 'srcdoc' in document.createElement('iframe');
+          if (supportsSrcdoc) {
+            pdfFrame.srcdoc = html;
+          } else {
+            // Fallback: create blob URL
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            pdfFrame.src = url;
+            // revoke old blob later (keep reference)
+            if (pdfFrame._currentBlob) {
+              URL.revokeObjectURL(pdfFrame._currentBlob);
             }
-          } catch (err) {
-            console.error('Polling error', err);
-            // stop polling on unexpected errors
-            clearInterval(pollHandle);
-            setErrorUI('An error occurred while checking the document status.');
-            return;
+            pdfFrame._currentBlob = url;
           }
 
-          if (attempts >= MAX_ATTEMPTS) {
-            clearInterval(pollHandle);
-            setErrorUI('Document not ready yet. Please try again later.');
-          }
-        }, POLL_INTERVAL);
-      } else {
-        // Nothing to do: no doc_id or doc_url
-        if (processingText) processingText.textContent = 'No document specified';
-        if (processingSub) processingSub.textContent = '';
-        msg.textContent = 'This view expects either a doc_url or a doc_id to poll for the generated file.';
+          // Update controls
+          openBtn.href = '#';
+          openBtn.classList.remove('hidden');
+          downloadBtn.href = `/download_doc/${encodeURIComponent(t.key)}/${encodeURIComponent(t.subkey)}`;
+          downloadBtn.classList.remove('hidden');
+
+          msg.textContent = `Showing template ${index + 1} (subkey: ${t.subkey}) — Created under key ${t.key}`;
+        } catch (err) {
+          console.error('Error rendering template', err);
+          msg.textContent = 'Failed to render template preview.';
+        }
+
+        // Mark active item in sidebar
+        const items = sidebar.querySelectorAll('.item');
+        items.forEach(it => it.classList.remove('active'));
+        const active = sidebar.querySelector('.item[data-index="'+index+'"]');
+        if (active) active.classList.add('active');
       }
 
-      // clicking the viewer area opens the url if available
-      viewerWrap.addEventListener('click', (e) => {
-        if (returnedUrl) window.open(returnedUrl, '_blank', 'noopener');
-      });
-
-      // allow keyboard "o" to open if ready (accessibility)
-      document.addEventListener('keydown', (e) => {
-        if ((e.key === 'o' || e.key === 'O') && returnedUrl) {
-          window.open(returnedUrl, '_blank', 'noopener');
+      // Sidebar click handling
+      sidebar.addEventListener('click', (e) => {
+        const item = e.target.closest('.item');
+        if (!item) return;
+        const idx = Number(item.getAttribute('data-index'));
+        if (!Number.isNaN(idx)) {
+          renderTemplateAt(idx);
         }
       });
 
-      // Cleanup when leaving the page
-      window.addEventListener('beforeunload', () => {
-        if (pollHandle) clearInterval(pollHandle);
+      // Open in new tab: create a blob of the current HTML and open in new window
+      openBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const t = templates[currentIndex];
+        if (!t) return;
+        const blob = new Blob([t.template], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        // Revoke after a short delay to allow the new tab to load
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
       });
 
+      // Setup initial render (first template)
+      renderTemplateAt(0);
+
+      // Accessibility: allow arrow keys to navigate templates
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'j') {
+          const next = Math.min(templates.length - 1, currentIndex + 1);
+          renderTemplateAt(next);
+        } else if (e.key === 'ArrowUp' || e.key === 'k') {
+          const prev = Math.max(0, currentIndex - 1);
+          renderTemplateAt(prev);
+        } else if ((e.key === 'o' || e.key === 'O') && templates[currentIndex]) {
+          // open
+          const t = templates[currentIndex];
+          const blob = new Blob([t.template], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank', 'noopener');
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+      });
     })();
   </script>
 </body>
